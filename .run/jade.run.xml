@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="jade" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="14" />
+    <option name="MAIN_CLASS_NAME" value="jade.Boot" />
+    <module name="MTRVSOS" />
+    <option name="PROGRAM_PARAMETERS" value="-gui -name the-platform -agents Tony:HelloWorldAgent" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
