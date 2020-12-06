@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_11">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
@@ -12,5 +12,12 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="jade" level="project" />
+    <orderEntry type="library" exported="" name="org.openjfx:javafx-maven-plugin:0.0.5" level="project" />
+    <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-controls:15.0.1" level="project" />
+    <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-controls:mac:15.0.1" level="project" />
+    <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-graphics:15.0.1" level="project" />
+    <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-graphics:mac:15.0.1" level="project" />
+    <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-base:15.0.1" level="project" />
+    <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-base:mac:15.0.1" level="project" />
   </component>
 </module>
