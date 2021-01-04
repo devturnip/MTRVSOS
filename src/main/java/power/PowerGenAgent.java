@@ -16,9 +16,13 @@ public class PowerGenAgent extends Agent {
     private class GeneratePower extends OneShotBehaviour {
 
         @Override
-        public void action() {
+        public void action(){
             System.out.println("Obtaining total system power levels...");
             Power powerInstance = Power.getPowerInstance();
+            System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+
+            System.out.println("Begin power generation...");
+            powerInstance.addPowerLevel(1000);
             System.out.println("Total power levels:" + powerInstance.showPowerLevels());
         }
     }
