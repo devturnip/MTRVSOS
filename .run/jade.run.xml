@@ -3,7 +3,7 @@
     <option name="ALTERNATIVE_JRE_PATH" value="14" />
     <option name="MAIN_CLASS_NAME" value="jade.Boot" />
     <module name="MTRVSOS" />
-    <option name="PROGRAM_PARAMETERS" value="-gui -name the-platform -agents &quot;pg:power.PowerGenAgent;tony:HelloWorldAgent&quot;" />
+    <option name="PROGRAM_PARAMETERS" value="-gui -name the-platform -agents &quot;pg:power.PowerGenAgent&quot;" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

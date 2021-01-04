@@ -1,3 +1,7 @@
 .idea/*
 target/*
 *.DS_store
+
+# jade stuff
+APDescription.txt
+MTPs-Main-Container.txt
