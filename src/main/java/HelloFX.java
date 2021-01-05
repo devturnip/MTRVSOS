@@ -1,6 +1,7 @@
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
+import jade.domain.JADEAgentManagement.KillAgent;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
@@ -8,38 +9,24 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import javafx.scene.canvas.Canvas;
-import power.Power;
-import power.PowerGenAgent;
 
-import java.awt.*;
+import javax.sound.midi.SysexMessage;
 import java.util.Random;
 
 public class HelloFX extends Application {
 
     private Image genImage;
     private ImageView genImageView;
+    ContainerController cc;
+    String powerAgentContainerName  = "PowerAgentContainer";
 
     @Override
     public void start(Stage stage) {
-       /* String javaVersion = System.getProperty("java.version");
-        String javafxVersion = System.getProperty("javafx.version");
-        StackPane root = new StackPane();
-        Label lHello = new Label("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
-
-
-        root.getChildren().addAll(lHello,genImageView);
-
-        Scene scene = new Scene(root, 640, 480);
-        stage.setScene(scene);
-        stage.show();*/
-
         Group root = new Group();
         Canvas canvas = new Canvas(640, 480);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -57,7 +44,7 @@ public class HelloFX extends Application {
                   }
                 };
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(3000);
                 } catch (InterruptedException ex) {
                 }
                 Platform.runLater(updater);
@@ -73,12 +60,24 @@ public class HelloFX extends Application {
         stage.show();
     }
 
+    @Override
+    public void stop() throws Exception {
+        super.stop();
+        try {
+            cc.kill();
+            cc.getPlatformController().kill();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
     private void startPowerAgents(Runtime runtime, int agentNum, Image ig, Group g) {
         Profile profile = new ProfileImpl();
-        profile.setParameter(Profile.CONTAINER_NAME, "PowerGenAgentContainer");
+        profile.setParameter(Profile.CONTAINER_NAME, powerAgentContainerName);
         profile.setParameter(Profile.MAIN_HOST, "localhost");
         profile.setParameter(Profile.MAIN_PORT, "7778");
         ContainerController containerController = runtime.createAgentContainer(profile);
+        cc = containerController;
 
         for(int i=0; i<agentNum; i++) {
             String agentName = "PowerGenAgent_" + String.valueOf(i);
