@@ -19,9 +19,15 @@ import java.util.Random;
 
 public class HelloFX extends Application {
 
+    //FLAGS
     private String PORT_NAME = "7778";
     private String HOSTNAME = "localhost";
+    private double canvas_x = 640;
+    private double canvas_y = 480;
+    private int NumPowerAgents = 5;
 
+
+    //VARS
     private ContainerController powerAgentContainerController;
     private String powerAgentContainerName  = "PowerAgentContainer";
     private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
@@ -29,7 +35,7 @@ public class HelloFX extends Application {
     @Override
     public void start(Stage stage) {
         Group root = new Group();
-        Canvas canvas = new Canvas(640, 480);
+        Canvas canvas = new Canvas(canvas_x, canvas_y);
 
         GraphicsContext gc = canvas.getGraphicsContext2D();
         Image ig = new Image(getClass().getResource("gen.png").toExternalForm());
@@ -42,7 +48,7 @@ public class HelloFX extends Application {
                 Runnable updater = new Runnable() {
                   @Override
                   public void run() {
-                      startPowerAgents(runtime, 5, ig, root);
+                      startPowerAgents(runtime, NumPowerAgents, ig, root);
                       startSoSAgent(runtime);
                   }
                 };
@@ -105,7 +111,7 @@ public class HelloFX extends Application {
                         "power.PowerGenAgent",
                         new Object[]{});//arguments
                 ag.start();
-                renderImage(ig, g, new Random().nextInt(640), new Random().nextInt(480), agentName);
+                renderImage(ig, g, new Random().nextInt((int)canvas_x), new Random().nextInt((int)canvas_y), agentName);
             } catch (StaleProxyException e) {
                 e.printStackTrace();
             }

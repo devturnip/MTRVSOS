@@ -36,7 +36,6 @@ public class SoSAgent extends Agent {
                     System.out.println(this.myAgent.getName()+ " sent (" + message + ") to " + agents[i].getName());
                 }
             }
-
         }
     }
 }
