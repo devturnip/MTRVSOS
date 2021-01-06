@@ -8,11 +8,13 @@ import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
+import jade.lang.acl.ACLMessage;
 
 import java.util.Random;
 
 public class PowerGenAgent extends Agent {
     private boolean done = false;
+    private ACLMessage pmsg = null;
 
     @Override
     protected void takeDown() {
@@ -40,7 +42,8 @@ public class PowerGenAgent extends Agent {
         }
 
         addBehaviour(new GeneratePower());
-        //addBehaviour(new PeriodicPowerGeneration(this, 10000));
+        addBehaviour(new ReceiveMessage());
+        addBehaviour(new PeriodicPowerGeneration(this, 2000));
     }
 
     private class GeneratePower extends OneShotBehaviour {
@@ -65,14 +68,33 @@ public class PowerGenAgent extends Agent {
 
         @Override
         protected void onTick() {
-            Power powerInstance = Power.getPowerInstance();
-            //System.out.println(getAID().getName() + " Cyclic power generation...");
-            powerInstance.addPowerLevel(new Random().ints(500, 10000).findFirst().getAsInt());
-            System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+            if (pmsg != null && pmsg.getContent().equals("START")) {
+                Power powerInstance = Power.getPowerInstance();
+                powerInstance.addPowerLevel(new Random().ints(500, 10000).findFirst().getAsInt());
+                System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+            }
+            else if (pmsg != null && pmsg.getContent().equals("STOP")){
+                System.out.println(getAID().getName() + " STOPPING POWER GENERATION...");
+                pmsg = null;
+                block();
+            }
+            else {
+                block();
+            }
         }
 
         @Override
         public void stop() {
+        }
+    }
+
+    private class ReceiveMessage extends CyclicBehaviour {
+        @Override
+        public void action() {
+            ACLMessage msg = myAgent.receive();
+            if (msg != null) {
+                pmsg = msg;
+            }
         }
     }
 
