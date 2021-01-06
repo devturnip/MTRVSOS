@@ -1,7 +1,6 @@
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
-import jade.domain.JADEAgentManagement.KillAgent;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
@@ -15,20 +14,23 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 
-import javax.sound.midi.SysexMessage;
+import java.util.HashMap;
 import java.util.Random;
 
 public class HelloFX extends Application {
 
-    private Image genImage;
-    private ImageView genImageView;
-    ContainerController cc;
-    String powerAgentContainerName  = "PowerAgentContainer";
+    private String PORT_NAME = "7778";
+    private String HOSTNAME = "localhost";
+
+    private ContainerController powerAgentContainerController;
+    private String powerAgentContainerName  = "PowerAgentContainer";
+    private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
 
     @Override
     public void start(Stage stage) {
         Group root = new Group();
         Canvas canvas = new Canvas(640, 480);
+
         GraphicsContext gc = canvas.getGraphicsContext2D();
         Image ig = new Image(getClass().getResource("gen.png").toExternalForm());
 
@@ -41,19 +43,18 @@ public class HelloFX extends Application {
                   @Override
                   public void run() {
                       startPowerAgents(runtime, 5, ig, root);
+                      startSoSAgent(runtime);
                   }
                 };
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(4000);
                 } catch (InterruptedException ex) {
                 }
                 Platform.runLater(updater);
-
             }
         });
 
         thread.start();
-        //startPowerAgents(runtime, 5, ig, root);
 
         root.getChildren().addAll(canvas);
         stage.setScene(new Scene(root));
@@ -64,20 +65,38 @@ public class HelloFX extends Application {
     public void stop() throws Exception {
         super.stop();
         try {
-            cc.kill();
-            cc.getPlatformController().kill();
+            powerAgentContainerController.kill();
+            //should probably implement a cleaner way
+            powerAgentContainerController.getPlatformController().kill();
+            Runtime.instance().shutDown();
         } catch (Exception e) {
             System.out.println(e);
+        }
+    }
+
+    private void startSoSAgent(Runtime runtime) {
+        Profile profile = new ProfileImpl();
+        profile.setParameter(Profile.CONTAINER_NAME, powerAgentContainerName);
+        profile.setParameter(Profile.MAIN_HOST, HOSTNAME);
+        profile.setParameter(Profile.MAIN_PORT, PORT_NAME);
+        ContainerController containerController = runtime.createAgentContainer(profile);
+        String agentName = "SoSAgent";
+        try {
+            AgentController ag = containerController.createNewAgent(agentName, "SoS.SoSAgent",
+                    new Object[]{});
+            ag.start();
+        } catch (StaleProxyException e) {
+            e.printStackTrace();
         }
     }
 
     private void startPowerAgents(Runtime runtime, int agentNum, Image ig, Group g) {
         Profile profile = new ProfileImpl();
         profile.setParameter(Profile.CONTAINER_NAME, powerAgentContainerName);
-        profile.setParameter(Profile.MAIN_HOST, "localhost");
-        profile.setParameter(Profile.MAIN_PORT, "7778");
+        profile.setParameter(Profile.MAIN_HOST, HOSTNAME);
+        profile.setParameter(Profile.MAIN_PORT, PORT_NAME);
         ContainerController containerController = runtime.createAgentContainer(profile);
-        cc = containerController;
+        powerAgentContainerController = containerController;
 
         for(int i=0; i<agentNum; i++) {
             String agentName = "PowerGenAgent_" + String.valueOf(i);
@@ -86,19 +105,20 @@ public class HelloFX extends Application {
                         "power.PowerGenAgent",
                         new Object[]{});//arguments
                 ag.start();
-                renderImage(ig, g, new Random().nextInt(640), new Random().nextInt(480));
+                renderImage(ig, g, new Random().nextInt(640), new Random().nextInt(480), agentName);
             } catch (StaleProxyException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void renderImage(Image ig, Group g, double x, double y) {
+    private void renderImage(Image ig, Group g, double x, double y, String agentName) {
         ImageView iv = new ImageView(ig);
         iv.setFitHeight(25);
         iv.setFitWidth(25);
         iv.setX(x);
         iv.setY(y);
+        powAgentMap.put(agentName, iv);
         g.getChildren().addAll(iv);
     }
 
