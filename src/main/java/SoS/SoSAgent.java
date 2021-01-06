@@ -8,6 +8,7 @@ import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
+import utils.Utils;
 
 public class SoSAgent extends Agent {
     @Override
@@ -23,21 +24,10 @@ public class SoSAgent extends Agent {
         @Override
         protected void onWake() {
             ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-            DFAgentDescription dfd = new DFAgentDescription();
-            ServiceDescription sd = new ServiceDescription();
-            sd.setType("Power-Generation");
-            dfd.addServices(sd);
-            SearchConstraints ALL = new SearchConstraints();
-            ALL.setMaxResults(new Long(-1));
-            try {
-                DFAgentDescription[] result = DFService.search(SoSAgent.this, dfd, ALL);
-                AID[] agents = new AID[result.length];
-                for (int i=0; i<result.length; i++) {
-                    agents[i] = result[i].getName();
-                    System.out.println(agents[i]);
-                }
-            } catch (FIPAException fe) {
-                fe.printStackTrace();
+            Utils util = new Utils();
+            AID[] agents = util.getAgentNamesByService(SoSAgent.this, "Power-Generation");
+            for (int i=0; i<agents.length; i++) {
+                System.out.println(agents[i]);
             }
         }
     }
