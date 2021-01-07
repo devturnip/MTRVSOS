@@ -16,6 +16,13 @@ public class PowerGenAgent extends Agent {
     private boolean done = false;
     private ACLMessage pmsg = null;
 
+    private boolean isOn = false;
+    private boolean isPaused = false;
+    private double maxCapacity = 0;
+    private double holdCapacity = 0;
+    private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
+    private int rateSecs = 2000;
+
     @Override
     protected void takeDown() {
         super.takeDown();
@@ -25,8 +32,12 @@ public class PowerGenAgent extends Agent {
 
     protected void setup() {
         //System.out.println("Hi, I'm Agent " + getAID().getLocalName());
-        System.out.println("My GUID is " + getAID().getName());
         //System.out.println("My addresses are " + String.join(",", getAID().getAddressesArray()));
+
+        determineCapacity();
+
+        System.out.println(getAID().getName() + " started with capacity of " + maxCapacity + " and genrate of "
+         + toAdd + "/" + rateSecs + " ms.");
 
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
@@ -41,9 +52,13 @@ public class PowerGenAgent extends Agent {
             fe.printStackTrace();
         }
 
-        addBehaviour(new GeneratePower());
+        //addBehaviour(new GeneratePower());
         addBehaviour(new ReceiveMessage());
-        addBehaviour(new PeriodicPowerGeneration(this, 2000));
+        addBehaviour(new PeriodicPowerGeneration(this, rateSecs));
+    }
+
+    private void determineCapacity() {
+        maxCapacity = new Random().ints(500000, 1000000).findFirst().getAsInt();
     }
 
     private class GeneratePower extends OneShotBehaviour {
@@ -69,11 +84,28 @@ public class PowerGenAgent extends Agent {
         @Override
         protected void onTick() {
             if (pmsg != null && pmsg.getContent().equals("START")) {
-                Power powerInstance = Power.getPowerInstance();
-                powerInstance.addPowerLevel(new Random().ints(500, 10000).findFirst().getAsInt());
-                System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+                if (isPaused == false) {
+                    if (holdCapacity < maxCapacity) {
+                        isOn = true;
+                        Power powerInstance = Power.getPowerInstance();
+                        powerInstance.addPowerLevel(toAdd);
+                        holdCapacity = holdCapacity + toAdd;
+                        System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+                    } else if (holdCapacity >= maxCapacity) {
+                        maxCapacity = holdCapacity;
+                        System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
+                        isPaused = true;
+                    }
+                } else if (isPaused == true && holdCapacity < maxCapacity) {
+                    isPaused = false;
+                    Power powerInstance = Power.getPowerInstance();
+                    powerInstance.addPowerLevel(toAdd);
+                    holdCapacity = holdCapacity + toAdd;
+                    System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+                }
             }
             else if (pmsg != null && pmsg.getContent().equals("STOP")){
+                isOn = false;
                 System.out.println(getAID().getName() + " STOPPING POWER GENERATION...");
                 pmsg = null;
                 block();

@@ -30,6 +30,7 @@ public class HelloFX extends Application {
     //VARS
     private ContainerController powerAgentContainerController;
     private String powerAgentContainerName  = "PowerAgentContainer";
+    private String SoSAgentContainerName = "SoSAgentContainer";
     private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
 
     @Override
@@ -82,7 +83,7 @@ public class HelloFX extends Application {
 
     private void startSoSAgent(Runtime runtime) {
         Profile profile = new ProfileImpl();
-        profile.setParameter(Profile.CONTAINER_NAME, powerAgentContainerName);
+        profile.setParameter(Profile.CONTAINER_NAME, SoSAgentContainerName);
         profile.setParameter(Profile.MAIN_HOST, HOSTNAME);
         profile.setParameter(Profile.MAIN_PORT, PORT_NAME);
         ContainerController containerController = runtime.createAgentContainer(profile);

@@ -9,9 +9,9 @@ import utils.Utils;
 public class SoSAgent extends Agent {
     @Override
     protected void setup() {
-        System.out.println("My GUID is " + getAID().getName());
+        System.out.println(getAID().getName() + " started.");
         addBehaviour(new ContactPower(this,10000, "START"));
-        addBehaviour(new ContactPower(this,20000, "STOP"));
+        //addBehaviour(new ContactPower(this,20000, "STOP"));
     }
 
     private class ContactPower extends WakerBehaviour {
