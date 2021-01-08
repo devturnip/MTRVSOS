@@ -15,8 +15,12 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class HelloFX extends Application {
 
@@ -34,6 +38,8 @@ public class HelloFX extends Application {
     private String powerAgentContainerName  = "PowerAgentContainer";
     private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
 
+    private BlockingQueue<String> agentsQueue = new LinkedBlockingQueue<>();
+
     @Override
     public void start(Stage stage) {
         Group root = new Group();
@@ -45,6 +51,20 @@ public class HelloFX extends Application {
 
         Runtime runtime = Runtime.instance();
 
+        Task task = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                for (int i=1; i<=NumPowerDisAgents; i++) {
+                    String agentName = startPowerDistributionAgents(powerAgentContainerController, i);
+                    int x = new Random().nextInt((int)canvas_x);
+                    int y = new Random().nextInt((int)canvas_y);
+                    agentsQueue.put(agentName);
+                    //renderImage(ig1, root, x, y, agentName);
+                }
+                return null;
+            }
+        };
+
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -53,6 +73,7 @@ public class HelloFX extends Application {
                   public void run() {
                       startPowerAgents(runtime, NumPowerAgents, ig, root);
                       startSoSAgent(runtime);
+                      new Thread(task).start();
                   }
                 };
                 try {
@@ -64,16 +85,23 @@ public class HelloFX extends Application {
         });
         thread.start();
 
-        Task task = new Task<Void>() {
+        Task render = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                for (int i=1; i<NumPowerDisAgents; i++) {
-                    startPowerDistributionAgents(powerAgentContainerController, i, ig1, root);
-                    renderImage(ig1, root, new Random().nextInt((int)canvas_x), new Random().nextInt((int)canvas_y), "");
+                String agentName = "";
+                while ((agentName = agentsQueue.take())!=null && !agentName.equals("")) {
+                    int x = new Random().nextInt((int)canvas_x);
+                    int y = new Random().nextInt((int)canvas_y);
+                    String finalAgentName = agentName;
+                    Platform.runLater(new Runnable() {
+                        public void run() {
+                            renderImage(ig1, root, x, y, finalAgentName);
+                        }
+                    });
                 }
                 return null;
             }
-        }; new Thread(task).start();
+        }; new Thread(render).start();
 
         root.getChildren().addAll(canvas);
         stage.setScene(new Scene(root));
@@ -131,20 +159,21 @@ public class HelloFX extends Application {
         }
     }
 
-    private void startPowerDistributionAgents(ContainerController cc, int agentNum, Image ig, Group g) {
+    private String startPowerDistributionAgents(ContainerController cc, int agentNum) {
+        String agentName = "";
         if (cc != null) {
-            String agentName = "PowerStoreDisAgent_" + String.valueOf(agentNum);
+            agentName = "PowerStoreDisAgent_" + String.valueOf(agentNum);
             try {
                 AgentController ag = cc.createNewAgent(agentName,
                         "power.PowerStoreDisAgent",
                         new Object[]{});//arguments
                 ag.start();
-                renderImage(ig, g, new Random().nextInt((int)canvas_x), new Random().nextInt((int)canvas_y), agentName);
             } catch (StaleProxyException e) {
                 e.printStackTrace();
             }
-
+            return agentName;
         }
+        return agentName;
     }
 
     private void renderImage(Image ig, Group g, double x, double y, String agentName) {
