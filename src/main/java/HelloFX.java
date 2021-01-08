@@ -14,6 +14,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
+import power.PowerGenAgent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,12 +55,19 @@ public class HelloFX extends Application {
         Task task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
+
+                for (int i=1; i<=NumPowerAgents; i++) {
+                    String agentName = startPowerAgents(powerAgentContainerController, i);
+                    int x = new Random().nextInt((int)canvas_x);
+                    int y = new Random().nextInt((int)canvas_y);
+                    agentsQueue.put(agentName);
+                }
+
                 for (int i=1; i<=NumPowerDisAgents; i++) {
                     String agentName = startPowerDistributionAgents(powerAgentContainerController, i);
                     int x = new Random().nextInt((int)canvas_x);
                     int y = new Random().nextInt((int)canvas_y);
                     agentsQueue.put(agentName);
-                    //renderImage(ig1, root, x, y, agentName);
                 }
                 return null;
             }
@@ -71,7 +79,8 @@ public class HelloFX extends Application {
                 Runnable updater = new Runnable() {
                   @Override
                   public void run() {
-                      startPowerAgents(runtime, NumPowerAgents, ig, root);
+                      //startPowerAgents(runtime, NumPowerAgents, ig, root);
+                      startPowerContainer(runtime);
                       startSoSAgent(runtime);
                       new Thread(task).start();
                   }
@@ -95,7 +104,7 @@ public class HelloFX extends Application {
                     String finalAgentName = agentName;
                     Platform.runLater(new Runnable() {
                         public void run() {
-                            renderImage(ig1, root, x, y, finalAgentName);
+                            renderImage(root, x, y, finalAgentName);
                         }
                     });
                 }
@@ -137,26 +146,30 @@ public class HelloFX extends Application {
         }
     }
 
-    private void startPowerAgents(Runtime runtime, int agentNum, Image ig, Group g) {
+    private void startPowerContainer(Runtime runtime) {
         Profile profile = new ProfileImpl();
         profile.setParameter(Profile.CONTAINER_NAME, powerAgentContainerName);
         profile.setParameter(Profile.MAIN_HOST, HOSTNAME);
         profile.setParameter(Profile.MAIN_PORT, PORT_NAME);
         ContainerController containerController = runtime.createAgentContainer(profile);
         powerAgentContainerController = containerController;
+    }
 
-        for(int i=1; i<=agentNum; i++) {
-            String agentName = "PowerGenAgent_" + String.valueOf(i);
+    private String startPowerAgents(ContainerController cc, int agentNum) {
+        String agentName = "";
+        if (cc != null) {
+            agentName = "PowerGenAgent_" + String.valueOf(agentNum);
             try {
-                AgentController ag = containerController.createNewAgent(agentName,
+                AgentController ag = cc.createNewAgent(agentName,
                         "power.PowerGenAgent",
                         new Object[]{});//arguments
                 ag.start();
-                renderImage(ig, g, new Random().nextInt((int)canvas_x), new Random().nextInt((int)canvas_y), agentName);
             } catch (StaleProxyException e) {
                 e.printStackTrace();
             }
+            return agentName;
         }
+        return agentName;
     }
 
     private String startPowerDistributionAgents(ContainerController cc, int agentNum) {
@@ -176,8 +189,16 @@ public class HelloFX extends Application {
         return agentName;
     }
 
-    private void renderImage(Image ig, Group g, double x, double y, String agentName) {
-        ImageView iv = new ImageView(ig);
+    private void renderImage(Group g, double x, double y, String agentName) {
+        Image ig = new Image(getClass().getResource("gen.png").toExternalForm());
+        Image ig1 = new Image(getClass().getResource("power_storage.png").toExternalForm());
+        ImageView iv = null;
+        if (agentName.contains("PowerGenAgent")) {
+            iv = new ImageView(ig);
+        } else if (agentName.contains("PowerStoreDisAgent")) {
+            iv = new ImageView(ig1);
+        }
+
         iv.setFitHeight(25);
         iv.setFitWidth(25);
         iv.setX(x);
