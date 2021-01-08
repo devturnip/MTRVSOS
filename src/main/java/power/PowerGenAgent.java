@@ -9,6 +9,7 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
+import utils.Utils;
 
 import java.util.Random;
 
@@ -21,7 +22,7 @@ public class PowerGenAgent extends Agent {
     private double maxCapacity = 0;
     private double holdCapacity = 0;
     private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
-    private int rateSecs = 2000;
+    private int rateSecs = 200;
 
     @Override
     protected void takeDown() {
@@ -39,18 +40,8 @@ public class PowerGenAgent extends Agent {
         System.out.println(getAID().getName() + " started with capacity of " + maxCapacity + " and genrate of "
          + toAdd + "/" + rateSecs + " ms.");
 
-        DFAgentDescription dfd = new DFAgentDescription();
-        dfd.setName(getAID());
-        ServiceDescription sd = new ServiceDescription();
-        sd.setType("Power-Generation");
-        sd.setName(getLocalName()+"Power-Generation");
-        dfd.addServices(sd);
-
-        try {
-            DFService.register(this, dfd);
-        } catch (FIPAException fe) {
-            fe.printStackTrace();
-        }
+        Utils utils = new Utils();
+        utils.registerServices(this, "Power-Generation");
 
         //addBehaviour(new GeneratePower());
         addBehaviour(new ReceiveMessage());
@@ -84,7 +75,7 @@ public class PowerGenAgent extends Agent {
         @Override
         protected void onTick() {
             if (pmsg != null && pmsg.getContent().equals("START")) {
-                if (isPaused == false) {
+                if (!isPaused) {
                     if (holdCapacity < maxCapacity) {
                         isOn = true;
                         Power powerInstance = Power.getPowerInstance();
@@ -96,7 +87,7 @@ public class PowerGenAgent extends Agent {
                         System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
                         isPaused = true;
                     }
-                } else if (isPaused == true && holdCapacity < maxCapacity) {
+                } else if (isPaused && holdCapacity < maxCapacity) {
                     isPaused = false;
                     Power powerInstance = Power.getPowerInstance();
                     powerInstance.addPowerLevel(toAdd);

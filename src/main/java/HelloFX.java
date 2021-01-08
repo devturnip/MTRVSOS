@@ -6,6 +6,7 @@ import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -25,12 +26,12 @@ public class HelloFX extends Application {
     private double canvas_x = 640;
     private double canvas_y = 480;
     private int NumPowerAgents = 5;
-
+    private int NumPowerDisAgents = 10;
 
     //VARS
+    private String SoSAgentContainerName = "SoSAgentContainer";
     private ContainerController powerAgentContainerController;
     private String powerAgentContainerName  = "PowerAgentContainer";
-    private String SoSAgentContainerName = "SoSAgentContainer";
     private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
 
     @Override
@@ -40,6 +41,7 @@ public class HelloFX extends Application {
 
         GraphicsContext gc = canvas.getGraphicsContext2D();
         Image ig = new Image(getClass().getResource("gen.png").toExternalForm());
+        Image ig1 = new Image(getClass().getResource("power_storage.png").toExternalForm());
 
         Runtime runtime = Runtime.instance();
 
@@ -60,8 +62,18 @@ public class HelloFX extends Application {
                 Platform.runLater(updater);
             }
         });
-
         thread.start();
+
+        Task task = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                for (int i=1; i<NumPowerDisAgents; i++) {
+                    startPowerDistributionAgents(powerAgentContainerController, i, ig1, root);
+                    renderImage(ig1, root, new Random().nextInt((int)canvas_x), new Random().nextInt((int)canvas_y), "");
+                }
+                return null;
+            }
+        }; new Thread(task).start();
 
         root.getChildren().addAll(canvas);
         stage.setScene(new Scene(root));
@@ -105,7 +117,7 @@ public class HelloFX extends Application {
         ContainerController containerController = runtime.createAgentContainer(profile);
         powerAgentContainerController = containerController;
 
-        for(int i=0; i<agentNum; i++) {
+        for(int i=1; i<=agentNum; i++) {
             String agentName = "PowerGenAgent_" + String.valueOf(i);
             try {
                 AgentController ag = containerController.createNewAgent(agentName,
@@ -116,6 +128,22 @@ public class HelloFX extends Application {
             } catch (StaleProxyException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void startPowerDistributionAgents(ContainerController cc, int agentNum, Image ig, Group g) {
+        if (cc != null) {
+            String agentName = "PowerStoreDisAgent_" + String.valueOf(agentNum);
+            try {
+                AgentController ag = cc.createNewAgent(agentName,
+                        "power.PowerStoreDisAgent",
+                        new Object[]{});//arguments
+                ag.start();
+                renderImage(ig, g, new Random().nextInt((int)canvas_x), new Random().nextInt((int)canvas_y), agentName);
+            } catch (StaleProxyException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 

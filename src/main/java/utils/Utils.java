@@ -32,4 +32,20 @@ public class Utils {
             return null;
         }
     }
+
+    public void registerServices(Agent a, String serviceType) {
+        String fullServiceName = a.getLocalName() + serviceType;
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(a.getAID());
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType(serviceType);
+        sd.setName(fullServiceName);
+        dfd.addServices(sd);
+        try {
+            DFService.register(a, dfd);
+        } catch (FIPAException fe) {
+            fe.printStackTrace();
+        }
+
+    }
 }
