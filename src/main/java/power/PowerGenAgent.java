@@ -29,6 +29,8 @@ public class PowerGenAgent extends Agent {
     private double holdCapacity = 0;
     private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
     private int rateSecs = 200;
+    private double agent_X = 0;
+    private double agent_Y = 0;
 
     private Utils utility = new Utils();
     private Power powerInstance = Power.getPowerInstance();
@@ -63,18 +65,17 @@ public class PowerGenAgent extends Agent {
     }
 
     private void initPosition() {
-        //System.out.println("LOCALNAME: " + this.getLocalName());
-        //System.out.println("NAME:" + this.getName());
         HashMap<String, ImageView> hm = mapsInstance.getAgentMap(this.getLocalName(), true);
-        System.out.println(hm);
-//        for (String an:hm.keySet()) {
-//            ImageView iv = hm.get(an);
-//            System.out.println(an + ": " + iv.getX() + "," + iv.getY());
-//        }
+        HashMap.Entry<String, ImageView> entry = hm.entrySet().iterator().next();
+        String agentName = entry.getKey();
+        ImageView iv = entry.getValue();
+        agent_X = iv.getX();
+        agent_Y = iv.getY();
+        System.out.println("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
+
     }
 
     private class GeneratePower extends OneShotBehaviour {
-
         @Override
         public void action() {
             System.out.println("Obtaining total system power levels...");
@@ -89,15 +90,14 @@ public class PowerGenAgent extends Agent {
     }
 
     private class InitPosition extends WakerBehaviour {
-
         public InitPosition(Agent a, long timeout) {
             super(a, timeout);
         }
-
         @Override
         protected void onWake() {
             super.onWake();
             initPosition();
+            utility.getNearest(this.myAgent, agent_X, agent_Y, "Power-Storage_Distribution");
         }
     }
 

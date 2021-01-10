@@ -8,9 +8,11 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
+import javafx.geometry.Point2D;
 import javafx.scene.image.ImageView;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class Utils {
     public Utils() {
@@ -51,5 +53,35 @@ public class Utils {
             fe.printStackTrace();
         }
 
+    }
+
+    public void getNearest(Agent agent1, double ax, double ay, String serviceName) {
+        double tempDistance = 0;
+        double retDistance = 0;
+        AID retAgent = null;
+
+        Maps mapInstance = Maps.getMapsInstance();
+        Point2D agent1_loc = new Point2D(ax, ay);
+        Point2D agent2_loc;
+        AID[] agents = getAgentNamesByService(agent1, serviceName);
+
+        for (int i=0; i<agents.length; i++) {
+            //System.out.println("AGENTS:" + agents[i].getName());
+            HashMap.Entry<String, ImageView> entry = mapInstance.getAgentMap(agents[i].getLocalName(), true).entrySet().iterator().next();
+            agent2_loc = new Point2D(entry.getValue().getX(), entry.getValue().getY());
+            tempDistance = agent1_loc.distance(agent2_loc);
+            System.out.println("Distance between " + agent1.getLocalName() + " and " +
+                    agents[i].getLocalName() + " is " + tempDistance);
+            if (retDistance == 0) {
+                retDistance = tempDistance;
+                retAgent = agents[i];
+            } else if (tempDistance < retDistance) {
+                retDistance = tempDistance;
+                retAgent = agents[i];
+            }
+        }
+
+        System.out.println("SHORTEST Distance between " + agent1.getLocalName() + " and " +
+                retAgent.getLocalName() + " is " + retDistance);
     }
 }

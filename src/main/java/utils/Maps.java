@@ -17,28 +17,22 @@ public class Maps {
     }
 
     public HashMap<String, ImageView> getAgentMap(String agentName, boolean single) {
-
         HashMap<String, ImageView> retSubMap = new HashMap<>();
         HashMap<String, ImageView> agentMap = this.agentMap;
 
-        //agentMap.forEach((k,v) -> System.out.println(k + ":" + v));
-
-//        if(!single) {
-//            for (String key : agentMap.keySet()) {
-//                if (key.contains(agentName)) {
-//                    retSubMap.put(key, agentMap.get(key));
-//                }
-//            }
-//        } else if (single) {
-//            System.out.println("SINGLE");
-//            for (String key : agentMap.keySet()) {
-//
-//                if (key.equals(agentName)) {
-//                    retSubMap.put(key, agentMap.get(key));
-//                }
-//            }
-//        }
-        //return retSubMap;
-        return agentMap;
+        if(!single) {
+            for (String key : agentMap.keySet()) {
+                if (key.contains(agentName)) {
+                    retSubMap.put(key, agentMap.get(key));
+                }
+            }
+        } else if (single) {
+            for (String key : agentMap.keySet()) {
+                if (key.equals(agentName)) {
+                    retSubMap.put(key, agentMap.get(key));
+                }
+            }
+        }
+        return retSubMap;
     }
 }
