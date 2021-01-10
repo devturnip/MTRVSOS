@@ -17,6 +17,7 @@ import utils.Utils;
 
 import javafx.scene.image.ImageView;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class PowerGenAgent extends Agent {
@@ -35,6 +36,10 @@ public class PowerGenAgent extends Agent {
     private Utils utility = new Utils();
     private Power powerInstance = Power.getPowerInstance();
     private Maps mapsInstance = Maps.getMapsInstance();
+    private Map.Entry<AID, Double> nearestNeighbour = null;
+
+    //message sending flags
+    boolean sentCFP = false;
 
     @Override
     protected void takeDown() {
@@ -97,7 +102,7 @@ public class PowerGenAgent extends Agent {
         protected void onWake() {
             super.onWake();
             initPosition();
-            utility.getNearest(this.myAgent, agent_X, agent_Y, "Power-Storage_Distribution");
+            nearestNeighbour = utility.getNearest(this.myAgent, agent_X, agent_Y, "Power-Storage_Distribution");
         }
     }
 
@@ -119,19 +124,17 @@ public class PowerGenAgent extends Agent {
                         maxCapacity = holdCapacity;
                         System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
                         isPaused = true;
-
-                        /*AID[] agents = utility.getAgentNamesByService(PowerGenAgent.this, "Power-Storage_Distribution");
-                        for (int i=0; i<agents.length; i++) {
-                            System.out.println(agents[i]);
-                            //System.out.println("AGENT LIST");
-
-                        }*/
                     }
                 } else if (isPaused && holdCapacity < maxCapacity) {
                     isPaused = false;
                     powerInstance.addPowerLevel(toAdd);
                     holdCapacity = holdCapacity + toAdd;
                     System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+                } else if (isPaused && holdCapacity >= maxCapacity) {
+                    if (sentCFP==false) {
+                        utility.sendMessage(myAgent, nearestNeighbour.getKey(), "BEGIN_STORE", "PROPOSE");
+                        sentCFP = true;
+                    }
                 }
             }
             else if (pmsg != null && pmsg.getContent().equals("STOP")){
@@ -156,6 +159,9 @@ public class PowerGenAgent extends Agent {
             ACLMessage msg = myAgent.receive();
             if (msg != null) {
                 pmsg = msg;
+            }
+            else {
+                block();
             }
         }
     }

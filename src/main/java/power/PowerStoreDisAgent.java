@@ -33,6 +33,7 @@ public class PowerStoreDisAgent extends Agent {
         utils.registerServices(this, "Power-Storage_Distribution");
 
         addBehaviour(new InitPosition(this, 2000));
+        addBehaviour(new ReceiveMessage());
     }
 
     private void determineCapacity() {
@@ -65,7 +66,23 @@ public class PowerStoreDisAgent extends Agent {
         public void action() {
             ACLMessage msg = myAgent.receive();
             if (msg != null) {
-                //pmsg = msg;
+                int performative = msg.getPerformative();
+                switch (performative) {
+                    case 11:
+                        String contents = msg.getContent();
+                        if (contents.equals("BEGIN_STORE")) {
+                            System.out.println("Received PROPOSE (" + contents + ") from " + msg.getSender().getLocalName());
+                            ACLMessage reply = msg.createReply();
+                            if (holdCapacity == 0 || holdCapacity < maxCapacity) {
+                                reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+                            } else if (holdCapacity >= maxCapacity) {
+                                reply.setPerformative(ACLMessage.REFUSE);
+                            }
+                            send(reply);
+                        }
+                }
+            } else {
+                block();
             }
         }
     }
