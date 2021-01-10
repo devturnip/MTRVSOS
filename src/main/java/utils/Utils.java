@@ -105,9 +105,11 @@ public class Utils {
                 msg.setContent(message);
                 sender.send(msg);
                 System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName());
+                break;
             case "":
                 System.out.println("ACLType invalid/missing. Please enter correct type.");
                 System.out.println("See jade documentation on ACLMessage FIPA Performative types.");
+                break;
         }
 
     }

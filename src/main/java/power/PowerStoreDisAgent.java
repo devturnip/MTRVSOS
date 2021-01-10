@@ -75,11 +75,14 @@ public class PowerStoreDisAgent extends Agent {
                             ACLMessage reply = msg.createReply();
                             if (holdCapacity == 0 || holdCapacity < maxCapacity) {
                                 reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+                                reply.setContent("ACCEPT_STORE");
                             } else if (holdCapacity >= maxCapacity) {
                                 reply.setPerformative(ACLMessage.REFUSE);
+                                reply.setContent("REJECT_STORE");
                             }
                             send(reply);
                         }
+                        break;
                 }
             } else {
                 block();

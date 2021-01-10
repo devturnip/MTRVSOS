@@ -23,6 +23,7 @@ import java.util.Random;
 public class PowerGenAgent extends Agent {
     private boolean done = false;
     private ACLMessage pmsg = null;
+    private ACLMessage smsg = null;
 
     private boolean isOn = false;
     private boolean isPaused = false;
@@ -39,7 +40,8 @@ public class PowerGenAgent extends Agent {
     private Map.Entry<AID, Double> nearestNeighbour = null;
 
     //message sending flags
-    boolean sentCFP = false;
+    private boolean sentCFP = false;
+    private int countCFP = 0;
 
     @Override
     protected void takeDown() {
@@ -113,6 +115,8 @@ public class PowerGenAgent extends Agent {
 
         @Override
         protected void onTick() {
+            //very convoluted...
+            //should rewrite at some point
             if (pmsg != null && pmsg.getContent().equals("START")) {
                 if (!isPaused) {
                     if (holdCapacity < maxCapacity) {
@@ -131,9 +135,30 @@ public class PowerGenAgent extends Agent {
                     holdCapacity = holdCapacity + toAdd;
                     System.out.println("Total power levels:" + powerInstance.showPowerLevels());
                 } else if (isPaused && holdCapacity >= maxCapacity) {
-                    if (sentCFP==false) {
+                    if (!sentCFP) {
                         utility.sendMessage(myAgent, nearestNeighbour.getKey(), "BEGIN_STORE", "PROPOSE");
                         sentCFP = true;
+                    } else if (sentCFP) {
+                        if (smsg != null) {
+                            if (smsg.getContent().equals("ACCEPT_STORE")) {
+                                System.out.println("Transferring to nearest neighbour...");
+
+                            } else if (smsg.getContent().equals("REJECT_STORE")) {
+                                //increment to 20 before resending a new proposal
+                                //ideally getNearestNeighbour should return a list of nearest neighbours
+                                //in descending order, such that it would transfer to the next nearest when current nearest
+                                //is full.
+                                if (countCFP == 20) {
+                                    sentCFP = false;
+                                }
+                                countCFP += 1;
+                            }
+                        } else {
+                            if (countCFP == 20) {
+                                sentCFP = false;
+                            }
+                            countCFP += 1;
+                        }
                     }
                 }
             }
@@ -158,7 +183,17 @@ public class PowerGenAgent extends Agent {
         public void action() {
             ACLMessage msg = myAgent.receive();
             if (msg != null) {
-                pmsg = msg;
+                String contents = msg.getContent();
+                switch (contents) {
+                    case "START":
+                        pmsg = msg;
+                        break;
+                    case "ACCEPT_STORE":
+                    case "REJECT_STORE":
+                        smsg = msg;
+                        break;
+                }
+
             }
             else {
                 block();
