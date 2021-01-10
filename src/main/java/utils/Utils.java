@@ -8,10 +8,14 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
+import javafx.scene.image.ImageView;
+
+import java.util.HashMap;
 
 public class Utils {
     public Utils() {
     }
+
     public AID[] getAgentNamesByService(Agent a, String service) {
         AID[] agents = null;
         DFAgentDescription dfd = new DFAgentDescription();

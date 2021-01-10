@@ -15,6 +15,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import power.PowerGenAgent;
+import utils.Maps;
+import utils.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,6 +42,8 @@ public class HelloFX extends Application {
     private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
 
     private BlockingQueue<String> agentsQueue = new LinkedBlockingQueue<>();
+    private Utils utility = new Utils();
+    private Maps mapsInstance = Maps.getMapsInstance();
 
     @Override
     public void start(Stage stage) {
@@ -204,6 +208,7 @@ public class HelloFX extends Application {
         iv.setX(x);
         iv.setY(y);
         powAgentMap.put(agentName, iv);
+        mapsInstance.MapAgentLocation(agentName, iv);
         g.getChildren().addAll(iv);
     }
 

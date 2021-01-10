@@ -1,16 +1,22 @@
 package power;
 
+import SoS.SoSAgent;
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
+import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
+import utils.Maps;
 import utils.Utils;
 
+import javafx.scene.image.ImageView;
+import java.util.HashMap;
 import java.util.Random;
 
 public class PowerGenAgent extends Agent {
@@ -24,6 +30,10 @@ public class PowerGenAgent extends Agent {
     private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
     private int rateSecs = 200;
 
+    private Utils utility = new Utils();
+    private Power powerInstance = Power.getPowerInstance();
+    private Maps mapsInstance = Maps.getMapsInstance();
+
     @Override
     protected void takeDown() {
         super.takeDown();
@@ -36,7 +46,6 @@ public class PowerGenAgent extends Agent {
         //System.out.println("My addresses are " + String.join(",", getAID().getAddressesArray()));
 
         determineCapacity();
-
         System.out.println(getAID().getName() + " started with capacity of " + maxCapacity + " and genrate of "
          + toAdd + "/" + rateSecs + " ms.");
 
@@ -44,12 +53,24 @@ public class PowerGenAgent extends Agent {
         utils.registerServices(this, "Power-Generation");
 
         //addBehaviour(new GeneratePower());
+        addBehaviour(new InitPosition(this, 2000));
         addBehaviour(new ReceiveMessage());
         addBehaviour(new PeriodicPowerGeneration(this, rateSecs));
     }
 
     private void determineCapacity() {
         maxCapacity = new Random().ints(500000, 1000000).findFirst().getAsInt();
+    }
+
+    private void initPosition() {
+        //System.out.println("LOCALNAME: " + this.getLocalName());
+        //System.out.println("NAME:" + this.getName());
+        HashMap<String, ImageView> hm = mapsInstance.getAgentMap(this.getLocalName(), true);
+        System.out.println(hm);
+//        for (String an:hm.keySet()) {
+//            ImageView iv = hm.get(an);
+//            System.out.println(an + ": " + iv.getX() + "," + iv.getY());
+//        }
     }
 
     private class GeneratePower extends OneShotBehaviour {
@@ -67,6 +88,19 @@ public class PowerGenAgent extends Agent {
         }
     }
 
+    private class InitPosition extends WakerBehaviour {
+
+        public InitPosition(Agent a, long timeout) {
+            super(a, timeout);
+        }
+
+        @Override
+        protected void onWake() {
+            super.onWake();
+            initPosition();
+        }
+    }
+
     private class PeriodicPowerGeneration extends TickerBehaviour {
         public PeriodicPowerGeneration(Agent a, long period) {
             super(a, period);
@@ -78,7 +112,6 @@ public class PowerGenAgent extends Agent {
                 if (!isPaused) {
                     if (holdCapacity < maxCapacity) {
                         isOn = true;
-                        Power powerInstance = Power.getPowerInstance();
                         powerInstance.addPowerLevel(toAdd);
                         holdCapacity = holdCapacity + toAdd;
                         System.out.println("Total power levels:" + powerInstance.showPowerLevels());
@@ -86,10 +119,16 @@ public class PowerGenAgent extends Agent {
                         maxCapacity = holdCapacity;
                         System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
                         isPaused = true;
+
+                        /*AID[] agents = utility.getAgentNamesByService(PowerGenAgent.this, "Power-Storage_Distribution");
+                        for (int i=0; i<agents.length; i++) {
+                            System.out.println(agents[i]);
+                            //System.out.println("AGENT LIST");
+
+                        }*/
                     }
                 } else if (isPaused && holdCapacity < maxCapacity) {
                     isPaused = false;
-                    Power powerInstance = Power.getPowerInstance();
                     powerInstance.addPowerLevel(toAdd);
                     holdCapacity = holdCapacity + toAdd;
                     System.out.println("Total power levels:" + powerInstance.showPowerLevels());
