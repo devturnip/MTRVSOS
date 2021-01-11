@@ -2,6 +2,7 @@ package power;
 
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -22,6 +23,10 @@ public class PowerStoreDisAgent extends Agent {
     private double agent_Y = 0;
 
     private Maps mapsInstance = Maps.getMapsInstance();
+    private Power powerInstance = Power.getPowerInstance();
+
+    //message sending flags
+    private int countCFP = 0;
 
     @Override
     protected void setup() {
@@ -61,28 +66,69 @@ public class PowerStoreDisAgent extends Agent {
         }
     }
 
+    private class GeneratePower extends OneShotBehaviour {
+        private String toAdd = "";
+        public GeneratePower(String toAdd) {
+            super();
+            this.toAdd = toAdd;
+        }
+        @Override
+        public void action() {
+            if (holdCapacity < maxCapacity) {
+                double addTo = Double.parseDouble(toAdd);
+                powerInstance.addPowerLevel(addTo);
+                holdCapacity = holdCapacity + addTo;
+                System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+            } else if (holdCapacity >= maxCapacity) {
+                maxCapacity = holdCapacity;
+                System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
+            }
+        }
+    }
+
     private class ReceiveMessage extends CyclicBehaviour {
         @Override
         public void action() {
             ACLMessage msg = myAgent.receive();
+
             if (msg != null) {
+                String contents = msg.getContent();
                 int performative = msg.getPerformative();
                 switch (performative) {
                     case 11:
-                        String contents = msg.getContent();
+                        contents = msg.getContent();
                         if (contents.equals("BEGIN_STORE")) {
-                            System.out.println("Received PROPOSE (" + contents + ") from " + msg.getSender().getLocalName());
+                            System.out.println(myAgent.getLocalName() + " received PROPOSE (" + contents + ") from " + msg.getSender().getLocalName());
                             ACLMessage reply = msg.createReply();
                             if (holdCapacity == 0 || holdCapacity < maxCapacity) {
                                 reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                                 reply.setContent("ACCEPT_STORE");
+                                send(reply);
                             } else if (holdCapacity >= maxCapacity) {
                                 reply.setPerformative(ACLMessage.REFUSE);
                                 reply.setContent("REJECT_STORE");
+                                send(reply);
                             }
-                            send(reply);
                         }
                         break;
+                    case 16:
+                        contents = msg.getContent();
+                        switch(contents) {
+                            case "ADD":
+                                if(holdCapacity == 0 || holdCapacity < maxCapacity) {
+                                    String key = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getKey();
+                                    String value = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue();
+                                    //System.out.println("KEY:VALUE - " + key +":" +value );
+                                    myAgent.addBehaviour(new GeneratePower(value));
+                                } else if (holdCapacity >= maxCapacity) {
+                                    ACLMessage replyBack = msg.createReply();
+                                    replyBack.setPerformative(ACLMessage.REFUSE);
+                                    replyBack.setContent("REJECT_STORE");
+                                    System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
+                                    send(replyBack);
+                                }
+                                break;
+                        }
                 }
             } else {
                 block();

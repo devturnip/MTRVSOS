@@ -123,7 +123,7 @@ public class PowerGenAgent extends Agent {
                         isOn = true;
                         powerInstance.addPowerLevel(toAdd);
                         holdCapacity = holdCapacity + toAdd;
-                        System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+                        System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                     } else if (holdCapacity >= maxCapacity) {
                         maxCapacity = holdCapacity;
                         System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
@@ -133,7 +133,7 @@ public class PowerGenAgent extends Agent {
                     isPaused = false;
                     powerInstance.addPowerLevel(toAdd);
                     holdCapacity = holdCapacity + toAdd;
-                    System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+                    System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                 } else if (isPaused && holdCapacity >= maxCapacity) {
                     if (!sentCFP) {
                         utility.sendMessage(myAgent, nearestNeighbour.getKey(), "BEGIN_STORE", "PROPOSE");
@@ -141,21 +141,26 @@ public class PowerGenAgent extends Agent {
                     } else if (sentCFP) {
                         if (smsg != null) {
                             if (smsg.getContent().equals("ACCEPT_STORE")) {
-                                System.out.println("Transferring to nearest neighbour...");
+                                //System.out.println(myAgent.getLocalName()+ " transferring to nearest neighbour: " + nearestNeighbour.getKey().getLocalName());
+                                HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toAdd", String.valueOf(toAdd));
+                                utility.sendMessageWithArgs(myAgent, nearestNeighbour.getKey(), arguments, "ADD", "REQUEST");
 
                             } else if (smsg.getContent().equals("REJECT_STORE")) {
+                                System.out.println(myAgent.getLocalName() + ": REJECT_STORE :" + countCFP);
                                 //increment to 20 before resending a new proposal
                                 //ideally getNearestNeighbour should return a list of nearest neighbours
                                 //in descending order, such that it would transfer to the next nearest when current nearest
                                 //is full.
-                                if (countCFP == 20) {
+                                if (countCFP >= 2000) {
                                     sentCFP = false;
+                                    countCFP = 0;
                                 }
                                 countCFP += 1;
                             }
                         } else {
-                            if (countCFP == 20) {
+                            if (countCFP >= 2000) {
                                 sentCFP = false;
+                                countCFP = 0;
                             }
                             countCFP += 1;
                         }

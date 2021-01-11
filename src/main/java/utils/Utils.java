@@ -113,4 +113,39 @@ public class Utils {
         }
 
     }
+
+    public void sendMessageWithArgs (Agent sender, AID recipient, Map.Entry<String, String> userDefinedParams, String message, String ACLTYPE) {
+        ACLMessage msg = null;
+        switch (ACLTYPE) {
+            case "CFP":
+                msg = new ACLMessage(ACLMessage.CFP);
+                msg.addReceiver(recipient);
+                msg.setContent(message);
+                msg.addUserDefinedParameter(userDefinedParams.getKey(), userDefinedParams.getValue());
+                sender.send(msg);
+                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
+                break;
+            case "PROPOSE":
+                msg = new ACLMessage(ACLMessage.PROPOSE);
+                msg.addReceiver(recipient);
+                msg.setContent(message);
+                msg.addUserDefinedParameter(userDefinedParams.getKey(), userDefinedParams.getValue());
+                sender.send(msg);
+                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
+                break;
+            case "REQUEST":
+                msg = new ACLMessage(ACLMessage.REQUEST);
+                msg.addReceiver(recipient);
+                msg.setContent(message);
+                msg.addUserDefinedParameter(userDefinedParams.getKey(), userDefinedParams.getValue());
+                sender.send(msg);
+                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
+                break;
+            case "":
+                System.out.println("ACLType invalid/missing. Please enter correct type.");
+                System.out.println("See jade documentation on ACLMessage FIPA Performative types.");
+                break;
+        }
+
+    }
 }
