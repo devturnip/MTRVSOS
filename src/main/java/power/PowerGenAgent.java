@@ -33,6 +33,7 @@ public class PowerGenAgent extends Agent {
     private int rateSecs = 200;
     private double agent_X = 0;
     private double agent_Y = 0;
+    private ImageView agentImageView;
 
     private Utils utility = new Utils();
     private Power powerInstance = Power.getPowerInstance();
@@ -42,6 +43,7 @@ public class PowerGenAgent extends Agent {
     //message sending flags
     private boolean sentCFP = false;
     private int countCFP = 0;
+    private int countCFPX = 500;
 
     @Override
     protected void takeDown() {
@@ -76,6 +78,7 @@ public class PowerGenAgent extends Agent {
         HashMap.Entry<String, ImageView> entry = hm.entrySet().iterator().next();
         String agentName = entry.getKey();
         ImageView iv = entry.getValue();
+        agentImageView = iv;
         agent_X = iv.getX();
         agent_Y = iv.getY();
         System.out.println("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
@@ -124,16 +127,31 @@ public class PowerGenAgent extends Agent {
                         powerInstance.addPowerLevel(toAdd);
                         holdCapacity = holdCapacity + toAdd;
                         System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                        try {
+                            mapsInstance.addHue(agentImageView, "GREEN");
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     } else if (holdCapacity >= maxCapacity) {
                         maxCapacity = holdCapacity;
                         System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
                         isPaused = true;
+                        try {
+                            mapsInstance.addHue(agentImageView, "RED");
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 } else if (isPaused && holdCapacity < maxCapacity) {
                     isPaused = false;
                     powerInstance.addPowerLevel(toAdd);
                     holdCapacity = holdCapacity + toAdd;
                     System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                    try {
+                        mapsInstance.addHue(agentImageView, "GREEN");
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 } else if (isPaused && holdCapacity >= maxCapacity) {
                     if (!sentCFP) {
                         utility.sendMessage(myAgent, nearestNeighbour.getKey(), "BEGIN_STORE", "PROPOSE");
@@ -147,22 +165,16 @@ public class PowerGenAgent extends Agent {
 
                             } else if (smsg.getContent().equals("REJECT_STORE")) {
                                 System.out.println(myAgent.getLocalName() + ": REJECT_STORE :" + countCFP);
-                                //increment to 20 before resending a new proposal
+                                //increment to x before resending a new proposal
                                 //ideally getNearestNeighbour should return a list of nearest neighbours
                                 //in descending order, such that it would transfer to the next nearest when current nearest
                                 //is full.
-                                if (countCFP >= 2000) {
+                                if (countCFP >= countCFPX) {
                                     sentCFP = false;
                                     countCFP = 0;
                                 }
                                 countCFP += 1;
                             }
-                        } else {
-                            if (countCFP >= 2000) {
-                                sentCFP = false;
-                                countCFP = 0;
-                            }
-                            countCFP += 1;
                         }
                     }
                 }

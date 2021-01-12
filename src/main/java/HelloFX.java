@@ -11,13 +11,16 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import power.PowerGenAgent;
 import utils.Maps;
 import utils.Utils;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -202,15 +205,15 @@ public class HelloFX extends Application {
         } else if (agentName.contains("PowerStoreDisAgent")) {
             iv = new ImageView(ig1);
         }
-
-        iv.setFitHeight(25);
-        iv.setFitWidth(25);
+        iv.setFitHeight(30);
+        iv.setFitWidth(30);
         iv.setX(x);
         iv.setY(y);
         powAgentMap.put(agentName, iv);
         mapsInstance.MapAgentLocation(agentName, iv);
         g.getChildren().addAll(iv);
     }
+
 
     public static void main(String[] args) {
         launch();
