@@ -54,13 +54,15 @@ public class Maps {
             @Override
             public void run() {
 
-
                 switch (Colour){
                     case "RED":
                         color[0] = Color.RED;
                         break;
                     case "GREEN":
                         color[0] = Color.GREEN;
+                        break;
+                    case "BLUE":
+                        color[0] = Color.BLUE;
                         break;
                     default:
                         color[0] = Color.TRANSPARENT;

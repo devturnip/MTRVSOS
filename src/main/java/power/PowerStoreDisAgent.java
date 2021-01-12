@@ -21,6 +21,7 @@ public class PowerStoreDisAgent extends Agent {
     private double holdCapacity = 0;
     private double agent_X = 0;
     private double agent_Y = 0;
+    private ImageView agentImageView;
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Power powerInstance = Power.getPowerInstance();
@@ -50,6 +51,7 @@ public class PowerStoreDisAgent extends Agent {
         HashMap.Entry<String, ImageView> entry = hm.entrySet().iterator().next();
         String agentName = entry.getKey();
         ImageView iv = entry.getValue();
+        agentImageView = iv;
         agent_X = iv.getX();
         agent_Y = iv.getY();
         System.out.println("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
@@ -79,9 +81,19 @@ public class PowerStoreDisAgent extends Agent {
                 powerInstance.addPowerLevel(addTo);
                 holdCapacity = holdCapacity + addTo;
                 System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                try {
+                    mapsInstance.addHue(agentImageView, "GREEN");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             } else if (holdCapacity >= maxCapacity) {
                 maxCapacity = holdCapacity;
                 System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
+                try {
+                    mapsInstance.addHue(agentImageView, "BLUE");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -115,17 +127,17 @@ public class PowerStoreDisAgent extends Agent {
                         contents = msg.getContent();
                         switch(contents) {
                             case "ADD":
+                                String key = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getKey();
+                                String value = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue();
                                 if(holdCapacity == 0 || holdCapacity < maxCapacity) {
-                                    String key = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getKey();
-                                    String value = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue();
-                                    //System.out.println("KEY:VALUE - " + key +":" +value );
                                     myAgent.addBehaviour(new GeneratePower(value));
                                 } else if (holdCapacity >= maxCapacity) {
+                                    myAgent.addBehaviour(new GeneratePower(value));
                                     ACLMessage replyBack = msg.createReply();
                                     replyBack.setPerformative(ACLMessage.REFUSE);
                                     replyBack.setContent("REJECT_STORE");
-                                    System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
                                     send(replyBack);
+
                                 }
                                 break;
                         }

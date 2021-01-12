@@ -137,7 +137,7 @@ public class PowerGenAgent extends Agent {
                         System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
                         isPaused = true;
                         try {
-                            mapsInstance.addHue(agentImageView, "RED");
+                            mapsInstance.addHue(agentImageView, "BLUE");
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
