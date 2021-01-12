@@ -1,6 +1,5 @@
 package utils;
 
-import SoS.SoSAgent;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
@@ -12,9 +11,7 @@ import jade.lang.acl.ACLMessage;
 import javafx.geometry.Point2D;
 import javafx.scene.image.ImageView;
 
-import java.util.AbstractMap;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Utils {
     public Utils() {
@@ -55,6 +52,50 @@ public class Utils {
             fe.printStackTrace();
         }
 
+    }
+
+    public LinkedHashMap<AID, Double> getNearestObjectsList (Agent agent1, double ax, double ay, String serviceName) {
+        AID[] agents = getAgentNamesByService(agent1, serviceName);
+        ArrayList<AID> agentsList = new ArrayList<AID>(Arrays.asList(agents));
+        ArrayList<AID> tempAgentsList = new ArrayList<AID>(Arrays.asList(agents));
+        LinkedHashMap<AID, Double> retMap = new LinkedHashMap<AID, Double>();
+
+        while (retMap.size() != agentsList.size()) {
+            HashMap.Entry<AID, Double> near = getNearest(agent1, ax, ay, tempAgentsList);
+            tempAgentsList.remove(near.getKey());
+            retMap.put(near.getKey(), near.getValue());
+
+        }
+        return retMap;
+    }
+
+    public HashMap.Entry<AID, Double> getNearest(Agent agent1, double ax, double ay, ArrayList<AID> agents) {
+        double tempDistance = 0;
+        double retDistance = 0;
+        AID retAgent = null;
+
+        Maps mapInstance = Maps.getMapsInstance();
+        Point2D agent1_loc = new Point2D(ax, ay);
+        Point2D agent2_loc;
+
+        for (int i=0; i<agents.size(); i++) {
+            HashMap.Entry<String, ImageView> entry = mapInstance.getAgentMap(agents.get(i).getLocalName(), true).entrySet().iterator().next();
+            agent2_loc = new Point2D(entry.getValue().getX(), entry.getValue().getY());
+            tempDistance = agent1_loc.distance(agent2_loc);
+            if (retDistance == 0) {
+                retDistance = tempDistance;
+                retAgent = agents.get(i);
+            } else if (tempDistance < retDistance) {
+                retDistance = tempDistance;
+                retAgent = agents.get(i);
+            }
+        }
+
+        System.out.println("SHORTEST Distance between " + agent1.getLocalName() + " and " +
+                retAgent.getLocalName() + " is " + retDistance);
+
+        HashMap.Entry<AID, Double> retMap = new HashMap.SimpleEntry<AID, Double>(retAgent, Double.valueOf(retDistance));
+        return retMap;
     }
 
     public HashMap.Entry<AID, Double> getNearest(Agent agent1, double ax, double ay, String serviceName) {

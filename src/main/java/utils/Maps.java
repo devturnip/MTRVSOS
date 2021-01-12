@@ -1,13 +1,12 @@
 package utils;
 
 import javafx.application.Platform;
-import javafx.scene.effect.*;
+import javafx.scene.effect.Light;
+import javafx.scene.effect.Lighting;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 
 import java.util.HashMap;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class Maps {
     private static Maps mapInstance = new Maps();
@@ -42,7 +41,7 @@ public class Maps {
         return retSubMap;
     }
 
-    public void addHue(ImageView iv, String Colour) throws InterruptedException {
+    public void changeColor(ImageView iv, String Colour) throws InterruptedException {
         final Color[] color = new Color[1];
         Lighting lighting = new Lighting();
         lighting.setDiffuseConstant(1.0);

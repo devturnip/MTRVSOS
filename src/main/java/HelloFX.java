@@ -11,20 +11,14 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import power.PowerGenAgent;
 import utils.Maps;
 import utils.Utils;
 
-import java.awt.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -33,6 +27,7 @@ public class HelloFX extends Application {
     //FLAGS
     private String PORT_NAME = "7778";
     private String HOSTNAME = "localhost";
+    private int imageHeightXY = 30;
     private double canvas_x = 640;
     private double canvas_y = 480;
     private int NumPowerAgents = 5;
@@ -65,15 +60,10 @@ public class HelloFX extends Application {
 
                 for (int i=1; i<=NumPowerAgents; i++) {
                     String agentName = startPowerAgents(powerAgentContainerController, i);
-                    int x = new Random().nextInt((int)canvas_x);
-                    int y = new Random().nextInt((int)canvas_y);
                     agentsQueue.put(agentName);
                 }
-
                 for (int i=1; i<=NumPowerDisAgents; i++) {
                     String agentName = startPowerDistributionAgents(powerAgentContainerController, i);
-                    int x = new Random().nextInt((int)canvas_x);
-                    int y = new Random().nextInt((int)canvas_y);
                     agentsQueue.put(agentName);
                 }
                 return null;
@@ -86,7 +76,6 @@ public class HelloFX extends Application {
                 Runnable updater = new Runnable() {
                   @Override
                   public void run() {
-                      //startPowerAgents(runtime, NumPowerAgents, ig, root);
                       startPowerContainer(runtime);
                       startSoSAgent(runtime);
                       new Thread(task).start();
@@ -106,8 +95,8 @@ public class HelloFX extends Application {
             protected Void call() throws Exception {
                 String agentName = "";
                 while ((agentName = agentsQueue.take())!=null && !agentName.equals("")) {
-                    int x = new Random().nextInt((int)canvas_x);
-                    int y = new Random().nextInt((int)canvas_y);
+                    int x = new Random().ints(imageHeightXY, ((int)canvas_x-imageHeightXY)).findFirst().getAsInt();
+                    int y = new Random().ints(imageHeightXY, ((int)canvas_y-imageHeightXY)).findFirst().getAsInt();
                     String finalAgentName = agentName;
                     Platform.runLater(new Runnable() {
                         public void run() {
@@ -205,8 +194,8 @@ public class HelloFX extends Application {
         } else if (agentName.contains("PowerStoreDisAgent")) {
             iv = new ImageView(ig1);
         }
-        iv.setFitHeight(30);
-        iv.setFitWidth(30);
+        iv.setFitHeight(imageHeightXY);
+        iv.setFitWidth(imageHeightXY);
         iv.setX(x);
         iv.setY(y);
         powAgentMap.put(agentName, iv);

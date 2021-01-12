@@ -4,10 +4,6 @@ import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.WakerBehaviour;
-import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import javafx.scene.image.ImageView;
 import utils.Maps;
@@ -82,7 +78,7 @@ public class PowerStoreDisAgent extends Agent {
                 holdCapacity = holdCapacity + addTo;
                 System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                 try {
-                    mapsInstance.addHue(agentImageView, "GREEN");
+                    mapsInstance.changeColor(agentImageView, "GREEN");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -90,7 +86,7 @@ public class PowerStoreDisAgent extends Agent {
                 maxCapacity = holdCapacity;
                 System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
                 try {
-                    mapsInstance.addHue(agentImageView, "BLUE");
+                    mapsInstance.changeColor(agentImageView, "BLUE");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

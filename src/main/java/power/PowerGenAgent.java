@@ -1,6 +1,5 @@
 package power;
 
-import SoS.SoSAgent;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -8,14 +7,11 @@ import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
+import javafx.scene.image.ImageView;
 import utils.Maps;
 import utils.Utils;
 
-import javafx.scene.image.ImageView;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -128,7 +124,7 @@ public class PowerGenAgent extends Agent {
                         holdCapacity = holdCapacity + toAdd;
                         System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                         try {
-                            mapsInstance.addHue(agentImageView, "GREEN");
+                            mapsInstance.changeColor(agentImageView, "GREEN");
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -137,7 +133,7 @@ public class PowerGenAgent extends Agent {
                         System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
                         isPaused = true;
                         try {
-                            mapsInstance.addHue(agentImageView, "BLUE");
+                            mapsInstance.changeColor(agentImageView, "BLUE");
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -148,7 +144,7 @@ public class PowerGenAgent extends Agent {
                     holdCapacity = holdCapacity + toAdd;
                     System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                     try {
-                        mapsInstance.addHue(agentImageView, "GREEN");
+                        mapsInstance.changeColor(agentImageView, "GREEN");
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
