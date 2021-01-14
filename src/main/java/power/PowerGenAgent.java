@@ -12,9 +12,7 @@ import javafx.scene.image.ImageView;
 import utils.Maps;
 import utils.Utils;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class PowerGenAgent extends Agent {
     private boolean done = false;
@@ -35,11 +33,15 @@ public class PowerGenAgent extends Agent {
     private Power powerInstance = Power.getPowerInstance();
     private Maps mapsInstance = Maps.getMapsInstance();
     private Map.Entry<AID, Double> nearestNeighbour = null;
+    private LinkedHashMap<AID, Double> nearestNeighbours = new LinkedHashMap<>();
 
     //message sending flags
     private boolean sentCFP = false;
     private int countCFP = 0;
     private int countCFPX = 500;
+    private AID currentNeighbour;
+    private AID nextNeighbour;
+    private long retryTime = 2000;
 
     @Override
     protected void takeDown() {
@@ -104,6 +106,11 @@ public class PowerGenAgent extends Agent {
             super.onWake();
             initPosition();
             nearestNeighbour = utility.getNearest(this.myAgent, agent_X, agent_Y, "Power-Storage_Distribution");
+            nearestNeighbours = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, "Power-Storage_Distribution");
+//            Iterator iterator = nearestNeighbours.entrySet().iterator();
+//            while(iterator.hasNext()) {
+//                System.out.println("INIT SET:" + iterator.next());
+//            }
         }
     }
 
@@ -150,26 +157,45 @@ public class PowerGenAgent extends Agent {
                     }
                 } else if (isPaused && holdCapacity >= maxCapacity) {
                     if (!sentCFP) {
-                        utility.sendMessage(myAgent, nearestNeighbour.getKey(), "BEGIN_STORE", "PROPOSE");
+                        currentNeighbour = nearestNeighbour.getKey();
+                        utility.sendMessage(myAgent, currentNeighbour, "BEGIN_STORE", "PROPOSE");
                         sentCFP = true;
                     } else if (sentCFP) {
                         if (smsg != null) {
                             if (smsg.getContent().equals("ACCEPT_STORE")) {
                                 //System.out.println(myAgent.getLocalName()+ " transferring to nearest neighbour: " + nearestNeighbour.getKey().getLocalName());
                                 HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toAdd", String.valueOf(toAdd));
-                                utility.sendMessageWithArgs(myAgent, nearestNeighbour.getKey(), arguments, "ADD", "REQUEST");
+                                utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "ADD", "REQUEST");
 
                             } else if (smsg.getContent().equals("REJECT_STORE")) {
-                                System.out.println(myAgent.getLocalName() + ": REJECT_STORE :" + countCFP);
-                                //increment to x before resending a new proposal
-                                //ideally getNearestNeighbour should return a list of nearest neighbours
-                                //in descending order, such that it would transfer to the next nearest when current nearest
-                                //is full.
-                                if (countCFP >= countCFPX) {
+//                                System.out.println(myAgent.getLocalName() + ": REJECT_STORE :" + countCFP);
+                                Iterator iterator = nearestNeighbours.keySet().iterator();
+                                while (iterator.hasNext()) {
+                                    AID temp = (AID) iterator.next();
+                                    System.out.println("AGENT: " + myAgent.getLocalName() + " CURRENTNEIGHBOUR:" + currentNeighbour + " TEMP:" + temp);
+                                    if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && iterator.hasNext()) {
+                                        nextNeighbour = (AID) iterator.next();
+                                        System.out.println("CURRENT:" + temp.getLocalName() + " NEXT:" + nextNeighbour.getLocalName());
+                                        utility.sendMessage(myAgent, nextNeighbour, "BEGIN_STORE", "PROPOSE");
+                                        currentNeighbour = nextNeighbour;
+                                        break;
+                                    }
+                                    if (!iterator.hasNext()) {
+                                        try {
+                                            Thread.sleep(retryTime);
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                        currentNeighbour = temp;
+                                        sentCFP = true;
+                                        break;
+                                    }
+                                }
+                                /*if (countCFP >= countCFPX) {
                                     sentCFP = false;
                                     countCFP = 0;
                                 }
-                                countCFP += 1;
+                                countCFP += 1;*/
                             }
                         }
                     }
@@ -206,7 +232,6 @@ public class PowerGenAgent extends Agent {
                         smsg = msg;
                         break;
                 }
-
             }
             else {
                 block();

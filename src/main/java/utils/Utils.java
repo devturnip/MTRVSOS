@@ -91,8 +91,8 @@ public class Utils {
             }
         }
 
-        System.out.println("SHORTEST Distance between " + agent1.getLocalName() + " and " +
-                retAgent.getLocalName() + " is " + retDistance);
+//        System.out.println("SHORTEST Distance between " + agent1.getLocalName() + " and " +
+//                retAgent.getLocalName() + " is " + retDistance);
 
         HashMap.Entry<AID, Double> retMap = new HashMap.SimpleEntry<AID, Double>(retAgent, Double.valueOf(retDistance));
         return retMap;
@@ -123,8 +123,8 @@ public class Utils {
             }
         }
 
-        System.out.println("SHORTEST Distance between " + agent1.getLocalName() + " and " +
-                retAgent.getLocalName() + " is " + retDistance);
+//        System.out.println("SHORTEST Distance between " + agent1.getLocalName() + " and " +
+//                retAgent.getLocalName() + " is " + retDistance);
 
         HashMap.Entry<AID, Double> retMap = new HashMap.SimpleEntry<AID, Double>(retAgent, Double.valueOf(retDistance));
         return retMap;
