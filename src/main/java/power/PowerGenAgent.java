@@ -23,6 +23,7 @@ public class PowerGenAgent extends Agent {
     private boolean isPaused = false;
     private double maxCapacity = 0;
     private double holdCapacity = 0;
+    //toAdd needs to be sampled from a probability distribution of actual power grid rates.
     private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
     private int rateSecs = 200;
     private double agent_X = 0;
@@ -68,6 +69,7 @@ public class PowerGenAgent extends Agent {
     }
 
     private void determineCapacity() {
+        //similarly, capacity needs to be sampled from an actual distribution of capacities.
         maxCapacity = new Random().ints(500000, 1000000).findFirst().getAsInt();
     }
 

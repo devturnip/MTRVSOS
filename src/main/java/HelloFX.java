@@ -37,6 +37,7 @@ public class HelloFX extends Application {
     private String SoSAgentContainerName = "SoSAgentContainer";
     private ContainerController powerAgentContainerController;
     private String powerAgentContainerName  = "PowerAgentContainer";
+    private String smartHomeAgentContainerName  = "SmartHomeAgentContainer";
     private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
 
     private BlockingQueue<String> agentsQueue = new LinkedBlockingQueue<>();
@@ -67,6 +68,7 @@ public class HelloFX extends Application {
                     agentsQueue.put(agentName);
                 }
                 return null;
+
             }
         };
 
@@ -78,6 +80,7 @@ public class HelloFX extends Application {
                   public void run() {
                       startPowerContainer(runtime);
                       startSoSAgent(runtime);
+                      startSmartHomeAgent(runtime);
                       new Thread(task).start();
                   }
                 };
@@ -135,6 +138,23 @@ public class HelloFX extends Application {
         String agentName = "SoSAgent";
         try {
             AgentController ag = containerController.createNewAgent(agentName, "SoS.SoSAgent",
+                    new Object[]{});
+            ag.start();
+        } catch (StaleProxyException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void startSmartHomeAgent(Runtime runtime) {
+        Profile profile = new ProfileImpl();
+        profile.setParameter(Profile.CONTAINER_NAME, smartHomeAgentContainerName);
+        profile.setParameter(Profile.MAIN_HOST, HOSTNAME);
+        profile.setParameter(Profile.MAIN_PORT, PORT_NAME);
+        ContainerController containerController = runtime.createAgentContainer(profile);
+
+        String agentName = "SmartHomeAgent";
+        try {
+            AgentController ag = containerController.createNewAgent(agentName, "consumer.SmartHomeAgent",
                     new Object[]{});
             ag.start();
         } catch (StaleProxyException e) {

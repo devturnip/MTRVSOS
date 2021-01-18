@@ -19,5 +19,6 @@
     <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-graphics:mac:15.0.1" level="project" />
     <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-base:15.0.1" level="project" />
     <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-base:mac:15.0.1" level="project" />
+    <orderEntry type="library" name="org.apache.commons:commons-math3:3.6.1" level="project" />
   </component>
 </module>
