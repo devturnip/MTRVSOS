@@ -4,10 +4,6 @@ import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.WakerBehaviour;
-import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import javafx.scene.image.ImageView;
 import utils.Maps;
@@ -21,12 +17,18 @@ public class PowerStoreDisAgent extends Agent {
     private double holdCapacity = 0;
     private double agent_X = 0;
     private double agent_Y = 0;
+    private ImageView agentImageView;
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Power powerInstance = Power.getPowerInstance();
 
     //message sending flags
     private int countCFP = 0;
+
+    //colours
+    private int currentColour = 0;
+    private int GREEN = 1;
+    private int BLUE = 2;
 
     @Override
     protected void setup() {
@@ -50,6 +52,7 @@ public class PowerStoreDisAgent extends Agent {
         HashMap.Entry<String, ImageView> entry = hm.entrySet().iterator().next();
         String agentName = entry.getKey();
         ImageView iv = entry.getValue();
+        agentImageView = iv;
         agent_X = iv.getX();
         agent_Y = iv.getY();
         System.out.println("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
@@ -79,9 +82,25 @@ public class PowerStoreDisAgent extends Agent {
                 powerInstance.addPowerLevel(addTo);
                 holdCapacity = holdCapacity + addTo;
                 System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                if (currentColour != GREEN) {
+                    try {
+                        mapsInstance.changeColor(agentImageView, "GREEN");
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    currentColour = GREEN;
+                }
             } else if (holdCapacity >= maxCapacity) {
                 maxCapacity = holdCapacity;
                 System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
+                if (currentColour != BLUE) {
+                    try {
+                        mapsInstance.changeColor(agentImageView, "BLUE");
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    currentColour = BLUE;
+                }
             }
         }
     }
@@ -115,17 +134,17 @@ public class PowerStoreDisAgent extends Agent {
                         contents = msg.getContent();
                         switch(contents) {
                             case "ADD":
+                                String key = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getKey();
+                                String value = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue();
                                 if(holdCapacity == 0 || holdCapacity < maxCapacity) {
-                                    String key = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getKey();
-                                    String value = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue();
-                                    //System.out.println("KEY:VALUE - " + key +":" +value );
                                     myAgent.addBehaviour(new GeneratePower(value));
                                 } else if (holdCapacity >= maxCapacity) {
+                                    myAgent.addBehaviour(new GeneratePower(value));
                                     ACLMessage replyBack = msg.createReply();
                                     replyBack.setPerformative(ACLMessage.REFUSE);
                                     replyBack.setContent("REJECT_STORE");
-                                    System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
                                     send(replyBack);
+
                                 }
                                 break;
                         }
