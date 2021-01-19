@@ -188,7 +188,7 @@ public class PowerGenAgent extends Agent {
                                 Iterator iterator = nearestNeighbours.keySet().iterator();
                                 while (iterator.hasNext()) {
                                     AID temp = (AID) iterator.next();
-                                    System.out.println("AGENT: " + myAgent.getLocalName() + " CURRENTNEIGHBOUR:" + currentNeighbour + " TEMP:" + temp);
+                                    //System.out.println("AGENT: " + myAgent.getLocalName() + " CURRENTNEIGHBOUR:" + currentNeighbour + " TEMP:" + temp);
                                     if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && iterator.hasNext()) {
                                         nextNeighbour = (AID) iterator.next();
                                         System.out.println("CURRENT:" + temp.getLocalName() + " NEXT:" + nextNeighbour.getLocalName());
@@ -203,7 +203,7 @@ public class PowerGenAgent extends Agent {
                                             e.printStackTrace();
                                         }
                                         currentNeighbour = temp;
-                                        sentCFP = true;
+                                        sentCFP = false;
                                         break;
                                     }
                                 }

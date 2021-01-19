@@ -138,14 +138,14 @@ public class Utils {
                 msg.addReceiver(recipient);
                 msg.setContent(message);
                 sender.send(msg);
-                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName());
+                //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName());
                 break;
             case "PROPOSE":
                 msg = new ACLMessage(ACLMessage.PROPOSE);
                 msg.addReceiver(recipient);
                 msg.setContent(message);
                 sender.send(msg);
-                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName());
+                //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName());
                 break;
             case "":
                 System.out.println("ACLType invalid/missing. Please enter correct type.");
@@ -164,7 +164,7 @@ public class Utils {
                 msg.setContent(message);
                 msg.addUserDefinedParameter(userDefinedParams.getKey(), userDefinedParams.getValue());
                 sender.send(msg);
-                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
+                //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
                 break;
             case "PROPOSE":
                 msg = new ACLMessage(ACLMessage.PROPOSE);
@@ -172,7 +172,7 @@ public class Utils {
                 msg.setContent(message);
                 msg.addUserDefinedParameter(userDefinedParams.getKey(), userDefinedParams.getValue());
                 sender.send(msg);
-                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
+                //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
                 break;
             case "REQUEST":
                 msg = new ACLMessage(ACLMessage.REQUEST);
@@ -180,7 +180,7 @@ public class Utils {
                 msg.setContent(message);
                 msg.addUserDefinedParameter(userDefinedParams.getKey(), userDefinedParams.getValue());
                 sender.send(msg);
-                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
+                //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
                 break;
             case "":
                 System.out.println("ACLType invalid/missing. Please enter correct type.");
