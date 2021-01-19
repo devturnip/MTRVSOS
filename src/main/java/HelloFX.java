@@ -31,7 +31,7 @@ public class HelloFX extends Application {
     private double canvas_x = 640;
     private double canvas_y = 480;
     private int NumPowerAgents = 5;
-    private int NumPowerDisAgents = 10;
+    private int NumPowerDisAgents = 5;
     private int NumSmartHomeAgents = 20;
 
     //VARS
@@ -225,13 +225,17 @@ public class HelloFX extends Application {
         ImageView iv = null;
         if (agentName.contains("PowerGenAgent")) {
             iv = new ImageView(ig);
+            iv.setFitHeight(imageHeightXY);
+            iv.setFitWidth(imageHeightXY);
         } else if (agentName.contains("PowerStoreDisAgent")) {
             iv = new ImageView(ig1);
+            iv.setFitHeight(imageHeightXY);
+            iv.setFitWidth(imageHeightXY);
         } else if (agentName.contains("SmartHomeAgent")) {
             iv = new ImageView(ig2);
+            iv.setFitHeight(20);
+            iv.setFitWidth(20);
         }
-        iv.setFitHeight(imageHeightXY);
-        iv.setFitWidth(imageHeightXY);
         iv.setX(x);
         iv.setY(y);
         powAgentMap.put(agentName, iv);

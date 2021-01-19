@@ -44,6 +44,11 @@ public class PowerGenAgent extends Agent {
     private AID nextNeighbour;
     private long retryTime = 2000;
 
+    //colours
+    private int currentColour = 0;
+    private int GREEN = 1;
+    private int BLUE = 2;
+
     @Override
     protected void takeDown() {
         super.takeDown();
@@ -132,19 +137,25 @@ public class PowerGenAgent extends Agent {
                         powerInstance.addPowerLevel(toAdd);
                         holdCapacity = holdCapacity + toAdd;
                         System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
-                        try {
-                            mapsInstance.changeColor(agentImageView, "GREEN");
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        if (currentColour != GREEN) {
+                            try {
+                                mapsInstance.changeColor(agentImageView, "GREEN");
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            currentColour = GREEN;
                         }
                     } else if (holdCapacity >= maxCapacity) {
                         maxCapacity = holdCapacity;
                         System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
                         isPaused = true;
-                        try {
-                            mapsInstance.changeColor(agentImageView, "BLUE");
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        if (currentColour != BLUE) {
+                            try {
+                                mapsInstance.changeColor(agentImageView, "BLUE");
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            currentColour = BLUE;
                         }
                     }
                 } else if (isPaused && holdCapacity < maxCapacity) {
@@ -152,10 +163,13 @@ public class PowerGenAgent extends Agent {
                     powerInstance.addPowerLevel(toAdd);
                     holdCapacity = holdCapacity + toAdd;
                     System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
-                    try {
-                        mapsInstance.changeColor(agentImageView, "GREEN");
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    if (currentColour != GREEN) {
+                        try {
+                            mapsInstance.changeColor(agentImageView, "GREEN");
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        currentColour = GREEN;
                     }
                 } else if (isPaused && holdCapacity >= maxCapacity) {
                     if (!sentCFP) {

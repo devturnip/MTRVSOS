@@ -25,6 +25,11 @@ public class PowerStoreDisAgent extends Agent {
     //message sending flags
     private int countCFP = 0;
 
+    //colours
+    private int currentColour = 0;
+    private int GREEN = 1;
+    private int BLUE = 2;
+
     @Override
     protected void setup() {
         super.setup();
@@ -77,18 +82,24 @@ public class PowerStoreDisAgent extends Agent {
                 powerInstance.addPowerLevel(addTo);
                 holdCapacity = holdCapacity + addTo;
                 System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
-                try {
-                    mapsInstance.changeColor(agentImageView, "GREEN");
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                if (currentColour != GREEN) {
+                    try {
+                        mapsInstance.changeColor(agentImageView, "GREEN");
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    currentColour = GREEN;
                 }
             } else if (holdCapacity >= maxCapacity) {
                 maxCapacity = holdCapacity;
                 System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
-                try {
-                    mapsInstance.changeColor(agentImageView, "BLUE");
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                if (currentColour != BLUE) {
+                    try {
+                        mapsInstance.changeColor(agentImageView, "BLUE");
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    currentColour = BLUE;
                 }
             }
         }
