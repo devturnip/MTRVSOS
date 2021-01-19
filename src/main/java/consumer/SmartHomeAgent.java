@@ -37,6 +37,12 @@ public class SmartHomeAgent extends Agent {
     private AID nextNeighbour;
     private long retryTime = 2000;
 
+    //colour flags
+    private int currentColour = 0;
+    private int GREEN = 1;
+    private int ORANGE = 3;
+    private int YELLOWGREEN = 4;
+
     @Override
     protected void setup() {
         super.setup();
@@ -115,6 +121,14 @@ public class SmartHomeAgent extends Agent {
                 String content = msg.getContent();
                 switch (content) {
                     case "ACCEPT_CONSUME":
+                        if (currentColour != YELLOWGREEN) {
+                            try {
+                                mapsInstance.changeColor(agentImageView, "YELLOWGREEN");
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            currentColour = YELLOWGREEN;
+                        }
                         break;
                     case "REJECT_CONSUME":
                         Iterator iterator = nearestNeighbours.keySet().iterator();
@@ -129,6 +143,14 @@ public class SmartHomeAgent extends Agent {
                                 currentNeighbour = temp;
                                 break;
                             }
+                        }
+                        if (currentColour != ORANGE) {
+                            try {
+                                mapsInstance.changeColor(agentImageView, "ORANGE");
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            currentColour = ORANGE;
                         }
                         //System.out.println(myAgent.getLocalName() + "'s current neighbour is " + currentNeighbour);
                 }

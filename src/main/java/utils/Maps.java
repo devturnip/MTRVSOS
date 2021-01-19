@@ -63,8 +63,15 @@ public class Maps {
                     case "BLUE":
                         color[0] = Color.BLUE;
                         break;
+                    case "ORANGE":
+                        color[0] = Color.ORANGE;
+                        break;
+                    case "YELLOWGREEN":
+                        color[0] = Color.YELLOWGREEN;
+                        break;
                     default:
                         color[0] = Color.TRANSPARENT;
+                        break;
                 }
 
                 lighting.setLight(new Light.Distant(45, 45, color[0]));
