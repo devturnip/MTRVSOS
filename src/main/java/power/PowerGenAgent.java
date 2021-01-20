@@ -247,6 +247,32 @@ public class PowerGenAgent extends Agent {
                     case "REJECT_STORE":
                         smsg = msg;
                         break;
+                    case "BEGIN_CONSUME":
+                        ACLMessage reply = msg.createReply();
+                        double toConsume = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
+                        if (holdCapacity >= 0 && holdCapacity >= toConsume) {
+                            reply.setPerformative(ACLMessage.AGREE);
+                            reply.setContent("ACCEPT_CONSUME");
+                            holdCapacity = holdCapacity - toConsume;
+                            powerInstance.subtractPowerLevel(toConsume);
+                            if (currentColour == BLUE) {
+                                try {
+                                    mapsInstance.changeColor(agentImageView, "GREEN");
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                currentColour = GREEN;
+                            }
+                            System.out.println(myAgent.getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
+                                    + ". Current power levels:" + String.valueOf(holdCapacity));
+                            send(reply);
+                        } else if (holdCapacity <= 0 || holdCapacity < toConsume) {
+                            reply.setPerformative(ACLMessage.AGREE);
+                            //System.out.println(myAgent.getLocalName()+" rejected " + msg.getSender().getLocalName());
+                            reply.setContent("REJECT_CONSUME");
+                            send(reply);
+                        }
+                        break;
                 }
             }
             else {

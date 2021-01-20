@@ -19,7 +19,7 @@ import java.util.Map;
 public class SmartHomeAgent extends Agent {
     private HashMap<String, Double> appliancesList = new HashMap<>();
     private double totalAppliancePowerConsumption = 0;
-    private int rateSecs = 200;
+    private int rateSecs = 1000;
     private boolean hasInit = false;
 
     private double agent_X = 0;
@@ -36,6 +36,8 @@ public class SmartHomeAgent extends Agent {
     private AID currentNeighbour;
     private AID nextNeighbour;
     private long retryTime = 2000;
+    private boolean messageSent = false;
+    private boolean acceptSent = true;
 
     //colour flags
     private int currentColour = 0;
@@ -49,8 +51,11 @@ public class SmartHomeAgent extends Agent {
         initAppliances();
         System.out.println(getLocalName()+ "'s total power consumption: "+ totalAppliancePowerConsumption);
         addBehaviour(new SmartHomeAgent.InitPosition(this, 2000));
-        addBehaviour(new ReceiveMessage());
-        addBehaviour(new ConsumeElectricity(this, rateSecs));
+//        addBehaviour(new ReceiveMessage());
+//        addBehaviour(new ConsumeElectricity(this, rateSecs));
+
+        addBehaviour(new ReceiveMessage2());
+        addBehaviour(new ConsumeElectricity2(this, rateSecs));
     }
 
     private void initAppliances() {
@@ -84,43 +89,65 @@ public class SmartHomeAgent extends Agent {
             super.onWake();
             initPosition();
 
-            //request power from nearest power storage for now...
-            nearestNeighbour = utility.getNearest(this.myAgent, agent_X, agent_Y, "Power-Storage_Distribution");
-            nearestNeighbours = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, "Power-Storage_Distribution");
+            String[] servicesArgs = new String[] {"Power-Storage_Distribution", "Power-Generation"};
+            nearestNeighbours = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs);
+            nearestNeighbour = utility.getNearest(this.myAgent, agent_X, agent_Y, servicesArgs);
             currentNeighbour = nearestNeighbour.getKey();
-//            Iterator iterator = nearestNeighbours.entrySet().iterator();
-//            while(iterator.hasNext()) {
-//                System.out.println("INIT SET:POWER- test" + iterator.next());
-//            }
+
             hasInit = true;
         }
     }
+    private class ConsumeElectricity2 extends TickerBehaviour {
 
-    private class ConsumeElectricity extends TickerBehaviour {
-
-        public ConsumeElectricity(Agent a, long period) {
+        public ConsumeElectricity2(Agent a, long period) {
             super(a, period);
         }
 
         @Override
         protected void onTick() {
+            HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toConsume", String.valueOf(totalAppliancePowerConsumption));
+            String[] servicesArgs = new String[] {"Power-Storage_Distribution", "Power-Generation"};
             if (hasInit == true) {
-                HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toConsume", String.valueOf(totalAppliancePowerConsumption));
-                utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
+                if (acceptSent) {
+                    utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
+                } else {
+                    Iterator consumptionEngine = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator();
+                    int count =0;
+                    while (consumptionEngine.hasNext()) {
+//                        System.out.println("NEXT");
+                        count+=1;
+                        AID temp = (AID) consumptionEngine.next();
+                        System.out.println("Loop:"+count+" temp:" + temp.getLocalName() + " current:" + currentNeighbour.getLocalName());
+                        if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && consumptionEngine.hasNext()) {
+                            nextNeighbour = (AID)consumptionEngine.next();
+//                            System.out.println("temp:" + temp.getLocalName() + " next:" + nextNeighbour.getLocalName());
+                            utility.sendMessageWithArgs(myAgent, nextNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
+                            currentNeighbour = nextNeighbour;
+                            System.out.println("Break from loop:"+count);
+                            break;
+                        }
+                        else if (!consumptionEngine.hasNext()) {
+                            currentNeighbour = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator().next();
+                            utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
+                            System.out.println("Break from loop:"+count);
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
 
-    private class ReceiveMessage extends CyclicBehaviour {
-
+    private class ReceiveMessage2 extends CyclicBehaviour {
         @Override
         public void action() {
             ACLMessage msg = myAgent.receive();
-
             if (msg!=null) {
                 String content = msg.getContent();
                 switch (content) {
                     case "ACCEPT_CONSUME":
+//                        System.out.println("TRUE");
+                        acceptSent = true;
                         if (currentColour != YELLOWGREEN) {
                             try {
                                 mapsInstance.changeColor(agentImageView, "YELLOWGREEN");
@@ -131,19 +158,8 @@ public class SmartHomeAgent extends Agent {
                         }
                         break;
                     case "REJECT_CONSUME":
-                        Iterator iterator = nearestNeighbours.keySet().iterator();
-                        while (iterator.hasNext()) {
-                            AID temp = (AID) iterator.next();
-                            if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && iterator.hasNext()) {
-                                nextNeighbour = (AID) iterator.next();
-                                currentNeighbour = nextNeighbour;
-                                break;
-                            }
-                            if (!iterator.hasNext()) {
-                                currentNeighbour = temp;
-                                break;
-                            }
-                        }
+//                        System.out.println("FALSE");
+                        acceptSent = false;
                         if (currentColour != ORANGE) {
                             try {
                                 mapsInstance.changeColor(agentImageView, "ORANGE");
@@ -152,13 +168,11 @@ public class SmartHomeAgent extends Agent {
                             }
                             currentColour = ORANGE;
                         }
-                        //System.out.println(myAgent.getLocalName() + "'s current neighbour is " + currentNeighbour);
+                        break;
                 }
-
             } else {
                 block();
             }
         }
     }
-
 }
