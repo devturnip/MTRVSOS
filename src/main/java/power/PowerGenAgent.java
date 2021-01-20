@@ -57,9 +57,6 @@ public class PowerGenAgent extends Agent {
     }
 
     protected void setup() {
-        //System.out.println("Hi, I'm Agent " + getAID().getLocalName());
-        //System.out.println("My addresses are " + String.join(",", getAID().getAddressesArray()));
-
         determineCapacity();
         System.out.println(getAID().getName() + " started with capacity of " + maxCapacity + " and genrate of "
          + toAdd + "/" + rateSecs + " ms.");
@@ -130,12 +127,24 @@ public class PowerGenAgent extends Agent {
         protected void onTick() {
             //very convoluted...
             //should rewrite at some point
+            double addTo = toAdd;
+            double tempHolder = holdCapacity + addTo;
+
             if (pmsg != null && pmsg.getContent().equals("START")) {
                 if (!isPaused) {
                     if (holdCapacity < maxCapacity) {
                         isOn = true;
-                        powerInstance.addPowerLevel(toAdd);
-                        holdCapacity = holdCapacity + toAdd;
+
+                        //code to prevent power exceeding maxcapacity
+                        if (tempHolder >= maxCapacity) {
+                            addTo = tempHolder - maxCapacity;
+                            powerInstance.addPowerLevel(addTo);
+                            holdCapacity = holdCapacity + addTo;
+                        } else {
+                            powerInstance.addPowerLevel(addTo);
+                            holdCapacity = holdCapacity + addTo;
+                        }
+
                         System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                         if (currentColour != GREEN) {
                             try {
@@ -146,7 +155,6 @@ public class PowerGenAgent extends Agent {
                             currentColour = GREEN;
                         }
                     } else if (holdCapacity >= maxCapacity) {
-                        maxCapacity = holdCapacity;
                         System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
                         isPaused = true;
                         if (currentColour != BLUE) {
@@ -160,8 +168,17 @@ public class PowerGenAgent extends Agent {
                     }
                 } else if (isPaused && holdCapacity < maxCapacity) {
                     isPaused = false;
-                    powerInstance.addPowerLevel(toAdd);
-                    holdCapacity = holdCapacity + toAdd;
+
+                    //code to prevent power exceeding maxcapacity
+                    if (tempHolder >= maxCapacity) {
+                        addTo = tempHolder - maxCapacity;
+                        powerInstance.addPowerLevel(addTo);
+                        holdCapacity = holdCapacity + addTo;
+                    } else {
+                        powerInstance.addPowerLevel(addTo);
+                        holdCapacity = holdCapacity + addTo;
+                    }
+
                     System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                     if (currentColour != GREEN) {
                         try {
@@ -207,11 +224,6 @@ public class PowerGenAgent extends Agent {
                                         break;
                                     }
                                 }
-                                /*if (countCFP >= countCFPX) {
-                                    sentCFP = false;
-                                    countCFP = 0;
-                                }
-                                countCFP += 1;*/
                             }
                         }
                     }

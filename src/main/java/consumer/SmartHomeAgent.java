@@ -114,19 +114,20 @@ public class SmartHomeAgent extends Agent {
                     Iterator consumptionEngine = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator();
                     int count =0;
                     while (consumptionEngine.hasNext()) {
-//                        System.out.println("NEXT");
                         count+=1;
                         AID temp = (AID) consumptionEngine.next();
                         System.out.println("Loop:"+count+" temp:" + temp.getLocalName() + " current:" + currentNeighbour.getLocalName());
-                        if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && consumptionEngine.hasNext()) {
+                        if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && consumptionEngine.hasNext()) { //if first item equals to current neighbour
                             nextNeighbour = (AID)consumptionEngine.next();
-//                            System.out.println("temp:" + temp.getLocalName() + " next:" + nextNeighbour.getLocalName());
+                            //send to next neighbour in list.
                             utility.sendMessageWithArgs(myAgent, nextNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
+                            //current neighbour is next neighbour.
                             currentNeighbour = nextNeighbour;
                             System.out.println("Break from loop:"+count);
                             break;
                         }
-                        else if (!consumptionEngine.hasNext()) {
+                        else if (!consumptionEngine.hasNext()) { //if last item in list
+                            //reset current neighbour to first item in list
                             currentNeighbour = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator().next();
                             utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
                             System.out.println("Break from loop:"+count);
