@@ -37,7 +37,8 @@ public class HelloFX extends Application {
     //VARS
     private String SoSAgentContainerName = "SoSAgentContainer";
     private ContainerController powerAgentContainerController;
-    private  ContainerController smartHomeAgentContainerController;
+    private ContainerController smartHomeAgentContainerController;
+    private ContainerController sosAgentContainerController;
     private String powerAgentContainerName  = "PowerAgentContainer";
     private String smartHomeAgentContainerName  = "SmartHomeAgentContainer";
     private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
@@ -117,6 +118,7 @@ public class HelloFX extends Application {
         }; new Thread(render).start();
 
         root.getChildren().addAll(canvas);
+        mapsInstance.setGroup(root);
         stage.setScene(new Scene(root));
         stage.show();
     }
@@ -126,8 +128,11 @@ public class HelloFX extends Application {
         super.stop();
         try {
             powerAgentContainerController.kill();
-            //should probably implement a cleaner way
+            smartHomeAgentContainerController.kill();
             powerAgentContainerController.getPlatformController().kill();
+            smartHomeAgentContainerController.getPlatformController().kill();
+            sosAgentContainerController.kill();
+            sosAgentContainerController.getPlatformController().kill();
             Runtime.instance().shutDown();
         } catch (Exception e) {
             System.out.println(e);
@@ -140,6 +145,7 @@ public class HelloFX extends Application {
         profile.setParameter(Profile.MAIN_HOST, HOSTNAME);
         profile.setParameter(Profile.MAIN_PORT, PORT_NAME);
         ContainerController containerController = runtime.createAgentContainer(profile);
+        sosAgentContainerController = containerController;
         String agentName = "SoSAgent";
         try {
             AgentController ag = containerController.createNewAgent(agentName, "SoS.SoSAgent",

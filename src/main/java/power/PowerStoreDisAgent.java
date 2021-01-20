@@ -4,6 +4,7 @@ import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.WakerBehaviour;
+import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
 import javafx.scene.image.ImageView;
 import utils.Maps;
@@ -41,6 +42,16 @@ public class PowerStoreDisAgent extends Agent {
 
         addBehaviour(new InitPosition(this, 2000));
         addBehaviour(new ReceiveMessage());
+    }
+
+    @Override
+    protected void takeDown() {
+        super.takeDown();
+        System.out.println(getLocalName() + " takedown. Killing...");
+        try { DFService.deregister(this); }
+        catch (Exception e) {}
+        mapsInstance.removeUI(agentImageView);
+        doDelete();
     }
 
     private void determineCapacity() {

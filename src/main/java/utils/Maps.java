@@ -1,6 +1,7 @@
 package utils;
 
 import javafx.application.Platform;
+import javafx.scene.Group;
 import javafx.scene.effect.Light;
 import javafx.scene.effect.Lighting;
 import javafx.scene.image.ImageView;
@@ -11,10 +12,34 @@ import java.util.HashMap;
 public class Maps {
     private static Maps mapInstance = new Maps();
     private HashMap<String, ImageView> agentMap = new HashMap<String, ImageView>();
+    private Group group = null;
 
     private Maps(){}
 
     public static Maps getMapsInstance() { return mapInstance;}
+
+    public void setGroup(Group group) {
+        this.group = group;
+    }
+
+    public Group getGroup(){
+        if (group!=null) {
+            return group;
+        } else {
+            return null;
+        }
+    }
+
+    public void removeUI(Object iv) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                if (group!=null) {
+                    group.getChildren().remove(iv);
+                }
+            }
+        });
+    }
 
     public void MapAgentLocation (String agentName, ImageView ig) {
         //System.out.println(agentName + "XY:" + ig.getX() + "," + ig.getY());
