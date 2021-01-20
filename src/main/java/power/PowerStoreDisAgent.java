@@ -79,8 +79,15 @@ public class PowerStoreDisAgent extends Agent {
         public void action() {
             if (holdCapacity < maxCapacity) {
                 double addTo = Double.parseDouble(toAdd);
-                powerInstance.addPowerLevel(addTo);
-                holdCapacity = holdCapacity + addTo;
+                double temp = holdCapacity + addTo;
+                if (temp >= maxCapacity) {
+                    addTo = temp - maxCapacity;
+                    powerInstance.addPowerLevel(addTo);
+                    holdCapacity = holdCapacity + addTo;
+                } else {
+                    powerInstance.addPowerLevel(addTo);
+                    holdCapacity = holdCapacity + addTo;
+                }
                 System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                 if (currentColour != GREEN) {
                     try {
@@ -91,7 +98,6 @@ public class PowerStoreDisAgent extends Agent {
                     currentColour = GREEN;
                 }
             } else if (holdCapacity >= maxCapacity) {
-                maxCapacity = holdCapacity;
                 System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
                 if (currentColour != BLUE) {
                     try {
@@ -124,6 +130,7 @@ public class PowerStoreDisAgent extends Agent {
                                 reply.setContent("ACCEPT_STORE");
                                 send(reply);
                             } else if (holdCapacity >= maxCapacity) {
+                                myAgent.addBehaviour(new GeneratePower("0"));
                                 reply.setPerformative(ACLMessage.REFUSE);
                                 reply.setContent("REJECT_STORE");
                                 send(reply);
@@ -147,6 +154,32 @@ public class PowerStoreDisAgent extends Agent {
 
                                 }
                                 break;
+                            case "BEGIN_CONSUME":
+                                ACLMessage reply = msg.createReply();
+                                double toConsume = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
+                                if (holdCapacity >= 0 && holdCapacity >= toConsume) {
+                                    reply.setPerformative(ACLMessage.AGREE);
+                                    reply.setContent("ACCEPT_CONSUME");
+                                    holdCapacity = holdCapacity - toConsume;
+                                    powerInstance.subtractPowerLevel(toConsume);
+                                    if (currentColour == BLUE) {
+                                        try {
+                                            mapsInstance.changeColor(agentImageView, "GREEN");
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                        currentColour = GREEN;
+                                    }
+                                    System.out.println(myAgent.getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
+                                    + ". Current power levels:" + String.valueOf(holdCapacity));
+                                    send(reply);
+                                } else if (holdCapacity <= 0 || holdCapacity < toConsume) {
+                                    reply.setPerformative(ACLMessage.AGREE);
+                                    reply.setContent("REJECT_CONSUME");
+                                    send(reply);
+                                }
+                                break;
+
                         }
                 }
             } else {

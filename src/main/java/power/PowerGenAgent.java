@@ -57,9 +57,6 @@ public class PowerGenAgent extends Agent {
     }
 
     protected void setup() {
-        //System.out.println("Hi, I'm Agent " + getAID().getLocalName());
-        //System.out.println("My addresses are " + String.join(",", getAID().getAddressesArray()));
-
         determineCapacity();
         System.out.println(getAID().getName() + " started with capacity of " + maxCapacity + " and genrate of "
          + toAdd + "/" + rateSecs + " ms.");
@@ -130,12 +127,24 @@ public class PowerGenAgent extends Agent {
         protected void onTick() {
             //very convoluted...
             //should rewrite at some point
+            double addTo = toAdd;
+            double tempHolder = holdCapacity + addTo;
+
             if (pmsg != null && pmsg.getContent().equals("START")) {
                 if (!isPaused) {
                     if (holdCapacity < maxCapacity) {
                         isOn = true;
-                        powerInstance.addPowerLevel(toAdd);
-                        holdCapacity = holdCapacity + toAdd;
+
+                        //code to prevent power exceeding maxcapacity
+                        if (tempHolder >= maxCapacity) {
+                            addTo = tempHolder - maxCapacity;
+                            powerInstance.addPowerLevel(addTo);
+                            holdCapacity = holdCapacity + addTo;
+                        } else {
+                            powerInstance.addPowerLevel(addTo);
+                            holdCapacity = holdCapacity + addTo;
+                        }
+
                         System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                         if (currentColour != GREEN) {
                             try {
@@ -146,7 +155,6 @@ public class PowerGenAgent extends Agent {
                             currentColour = GREEN;
                         }
                     } else if (holdCapacity >= maxCapacity) {
-                        maxCapacity = holdCapacity;
                         System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
                         isPaused = true;
                         if (currentColour != BLUE) {
@@ -160,8 +168,17 @@ public class PowerGenAgent extends Agent {
                     }
                 } else if (isPaused && holdCapacity < maxCapacity) {
                     isPaused = false;
-                    powerInstance.addPowerLevel(toAdd);
-                    holdCapacity = holdCapacity + toAdd;
+
+                    //code to prevent power exceeding maxcapacity
+                    if (tempHolder >= maxCapacity) {
+                        addTo = tempHolder - maxCapacity;
+                        powerInstance.addPowerLevel(addTo);
+                        holdCapacity = holdCapacity + addTo;
+                    } else {
+                        powerInstance.addPowerLevel(addTo);
+                        holdCapacity = holdCapacity + addTo;
+                    }
+
                     System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                     if (currentColour != GREEN) {
                         try {
@@ -188,7 +205,7 @@ public class PowerGenAgent extends Agent {
                                 Iterator iterator = nearestNeighbours.keySet().iterator();
                                 while (iterator.hasNext()) {
                                     AID temp = (AID) iterator.next();
-                                    System.out.println("AGENT: " + myAgent.getLocalName() + " CURRENTNEIGHBOUR:" + currentNeighbour + " TEMP:" + temp);
+                                    //System.out.println("AGENT: " + myAgent.getLocalName() + " CURRENTNEIGHBOUR:" + currentNeighbour + " TEMP:" + temp);
                                     if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && iterator.hasNext()) {
                                         nextNeighbour = (AID) iterator.next();
                                         System.out.println("CURRENT:" + temp.getLocalName() + " NEXT:" + nextNeighbour.getLocalName());
@@ -203,15 +220,10 @@ public class PowerGenAgent extends Agent {
                                             e.printStackTrace();
                                         }
                                         currentNeighbour = temp;
-                                        sentCFP = true;
+                                        sentCFP = false;
                                         break;
                                     }
                                 }
-                                /*if (countCFP >= countCFPX) {
-                                    sentCFP = false;
-                                    countCFP = 0;
-                                }
-                                countCFP += 1;*/
                             }
                         }
                     }
@@ -246,6 +258,32 @@ public class PowerGenAgent extends Agent {
                     case "ACCEPT_STORE":
                     case "REJECT_STORE":
                         smsg = msg;
+                        break;
+                    case "BEGIN_CONSUME":
+                        ACLMessage reply = msg.createReply();
+                        double toConsume = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
+                        if (holdCapacity >= 0 && holdCapacity >= toConsume) {
+                            reply.setPerformative(ACLMessage.AGREE);
+                            reply.setContent("ACCEPT_CONSUME");
+                            holdCapacity = holdCapacity - toConsume;
+                            powerInstance.subtractPowerLevel(toConsume);
+                            if (currentColour == BLUE) {
+                                try {
+                                    mapsInstance.changeColor(agentImageView, "GREEN");
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                currentColour = GREEN;
+                            }
+                            System.out.println(myAgent.getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
+                                    + ". Current power levels:" + String.valueOf(holdCapacity));
+                            send(reply);
+                        } else if (holdCapacity <= 0 || holdCapacity < toConsume) {
+                            reply.setPerformative(ACLMessage.AGREE);
+                            //System.out.println(myAgent.getLocalName()+" rejected " + msg.getSender().getLocalName());
+                            reply.setContent("REJECT_CONSUME");
+                            send(reply);
+                        }
                         break;
                 }
             }
