@@ -1,8 +1,13 @@
 package consumer;
 
+import com.sun.javafx.geom.Point2D;
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.OneShotBehaviour;
+import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
+import javafx.concurrent.Task;
 import javafx.scene.image.ImageView;
 import utils.Maps;
 import utils.Utils;
@@ -21,6 +26,7 @@ public class EVAgent extends Agent {
 
     private LinkedHashMap<AID, Double> nearestNeighbours = new LinkedHashMap<>();
     private Map.Entry<AID, Double> nearestNeighbour = null;
+    private HashMap<String, Point2D> listOfAgentPositions = new HashMap<>();
 
     //message sending flags
     private AID currentNeighbour;
@@ -30,6 +36,8 @@ public class EVAgent extends Agent {
     protected void setup() {
         super.setup();
         addBehaviour(new InitPosition(this, 2000));
+        addBehaviour(new UpdatePositionList(this, 500));
+        addBehaviour(new MoveCar(this, 4000));
 
         /*
         EV Behaviour writeup:
@@ -58,6 +66,41 @@ public class EVAgent extends Agent {
         agent_Y = iv.getY();
         System.out.println("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
     }
+    private void updateSelfPosition() {
+        ImageView iv = agentImageView;
+        int x_position = (int) iv.getX();
+        int y_position = (int) iv.getY();
+        Point2D updatedPoint2d = new Point2D(x_position, y_position);
+        mapsInstance.mapAgentLocation(getLocalName(), updatedPoint2d);
+    }
+
+    private void travel() {
+        Task travel = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                for (int i=0; i<100; i++) {
+                    agentImageView.setX(agent_X+i);
+                    agentImageView.setY(agent_Y);
+                    Thread.sleep(10);
+                }
+                return null;
+            }
+        }; new Thread(travel).start();
+
+    }
+
+    private class MoveCar extends WakerBehaviour {
+
+        public MoveCar(Agent a, long timeout) {
+            super(a, timeout);
+        }
+
+        @Override
+        protected void onWake() {
+            super.onWake();
+            travel();
+        }
+    }
 
     private class InitPosition extends WakerBehaviour {
         public InitPosition(Agent a, long timeout) {
@@ -73,6 +116,26 @@ public class EVAgent extends Agent {
             nearestNeighbour = utility.getNearest(this.myAgent, agent_X, agent_Y, servicesArgs);
             currentNeighbour = nearestNeighbour.getKey();
 
+        }
+    }
+
+    private class TravelAround extends CyclicBehaviour {
+
+        @Override
+        public void action() {
+
+        }
+    }
+
+    private class UpdatePositionList extends TickerBehaviour {
+
+        public UpdatePositionList(Agent a, long period) {
+            super(a, period);
+        }
+
+        @Override
+        protected void onTick() {
+            listOfAgentPositions = mapsInstance.getAgentsMappedPoint2D();
         }
     }
 }

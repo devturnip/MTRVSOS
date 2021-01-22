@@ -1,5 +1,6 @@
 package utils;
 
+import com.sun.javafx.geom.Point2D;
 import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.effect.Light;
@@ -12,6 +13,7 @@ import java.util.HashMap;
 public class Maps {
     private static Maps mapInstance = new Maps();
     private HashMap<String, ImageView> agentMap = new HashMap<String, ImageView>();
+    private HashMap<String, Point2D> agentMapPoint2D = new HashMap<String, Point2D>();
     private Group group = null;
 
     private Maps(){}
@@ -48,6 +50,14 @@ public class Maps {
 
     public HashMap<String, ImageView> getAgentsMappedLocation() {
         return agentMap;
+    }
+
+    public void mapAgentLocation (String agentName, Point2D point2D) {
+        agentMapPoint2D.put(agentName, point2D);
+    }
+
+    public HashMap<String, Point2D> getAgentsMappedPoint2D() {
+        return agentMapPoint2D;
     }
 
     public HashMap<String, ImageView> getAgentMap(String agentName, boolean single) {

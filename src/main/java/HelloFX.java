@@ -11,10 +11,8 @@ import javafx.concurrent.Task;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import utils.Maps;
 import utils.Utils;
@@ -48,7 +46,7 @@ public class HelloFX extends Application {
     private ContainerController smartHomeAgentContainerController;
     private ContainerController sosAgentContainerController;
     private ContainerController evAgentContainerController;
-    private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
+    //private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
 
     private BlockingQueue<String> agentsQueue = new LinkedBlockingQueue<>();
     private Utils utility = new Utils();
@@ -58,9 +56,6 @@ public class HelloFX extends Application {
     public void start(Stage stage) {
         Group root = new Group();
         Canvas canvas = new Canvas(canvas_x, canvas_y);
-
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.setStroke(Color.GRAY);
 
 
 
@@ -116,15 +111,13 @@ public class HelloFX extends Application {
             @Override
             protected Void call() throws Exception {
                 String agentName = "";
-                HashMap<String, ImageView> allAgentsMap = mapsInstance.getAgentsMappedLocation();
+                HashMap<String, Point2D> allAgentsMap = mapsInstance.getAgentsMappedPoint2D();
                 Iterator locationMap = allAgentsMap.entrySet().iterator();
                 ArrayList<Point2D> points = new ArrayList<>();
 
                 while (locationMap.hasNext()) {
-                    Map.Entry<String, ImageView> m = (Map.Entry<String, ImageView>) locationMap.next();
-                    int x = (int) m.getValue().getX();
-                    int y = (int) m.getValue().getY();
-                    points.add(new Point2D(x,y));
+                    Map.Entry<String, Point2D> m = (Map.Entry<String, Point2D>) locationMap.next();
+                    points.add(m.getValue());
                 }
 
                 while ((agentName = agentsQueue.take())!=null && !agentName.equals("")) {
@@ -314,7 +307,9 @@ public class HelloFX extends Application {
         }
         iv.setX(x);
         iv.setY(y);
-        powAgentMap.put(agentName, iv);
+        Point2D point2D = new Point2D((int)x,(int)y);
+        mapsInstance.mapAgentLocation(agentName, point2D);
+        //powAgentMap.put(agentName, iv);
         mapsInstance.mapAgentLocation(agentName, iv);
         g.getChildren().addAll(iv);
     }
