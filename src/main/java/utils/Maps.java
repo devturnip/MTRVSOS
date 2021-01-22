@@ -41,9 +41,13 @@ public class Maps {
         });
     }
 
-    public void MapAgentLocation (String agentName, ImageView ig) {
+    public void mapAgentLocation (String agentName, ImageView ig) {
         //System.out.println(agentName + "XY:" + ig.getX() + "," + ig.getY());
         agentMap.put(agentName, ig);
+    }
+
+    public HashMap<String, ImageView> getAgentsMappedLocation() {
+        return agentMap;
     }
 
     public HashMap<String, ImageView> getAgentMap(String agentName, boolean single) {

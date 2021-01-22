@@ -1,3 +1,4 @@
+import com.sun.javafx.geom.Point2D;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
@@ -13,12 +14,12 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import utils.Maps;
 import utils.Utils;
 
-import java.util.HashMap;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -27,14 +28,15 @@ public class HelloFX extends Application {
     //FLAGS
     private String PORT_NAME = "7778";
     private String HOSTNAME = "localhost";
+    private int multiplier = 2;
     private int imageHeightXY = 30;
     private int homeImageXY = 20;
     private int evImageXY = 15;
-    private double canvas_x = 640;
-    private double canvas_y = 480;
-    private int numPowerAgents = 1;
-    private int numPowerDisAgents = 2;
-    private int numSmartHomeAgents = 3;
+    private double canvas_x = 1280;
+    private double canvas_y = 1020;
+    private int numPowerAgents = 3;
+    private int numPowerDisAgents = 3;
+    private int numSmartHomeAgents = 5;
     private int numEVAgents = 1;
 
     //VARS
@@ -58,8 +60,9 @@ public class HelloFX extends Application {
         Canvas canvas = new Canvas(canvas_x, canvas_y);
 
         GraphicsContext gc = canvas.getGraphicsContext2D();
-        Image ig = new Image(getClass().getResource("gen.png").toExternalForm());
-        Image ig1 = new Image(getClass().getResource("power_storage.png").toExternalForm());
+        gc.setStroke(Color.GRAY);
+
+
 
         Runtime runtime = Runtime.instance();
 
@@ -113,15 +116,42 @@ public class HelloFX extends Application {
             @Override
             protected Void call() throws Exception {
                 String agentName = "";
+                HashMap<String, ImageView> allAgentsMap = mapsInstance.getAgentsMappedLocation();
+                Iterator locationMap = allAgentsMap.entrySet().iterator();
+                ArrayList<Point2D> points = new ArrayList<>();
+
+                while (locationMap.hasNext()) {
+                    Map.Entry<String, ImageView> m = (Map.Entry<String, ImageView>) locationMap.next();
+                    int x = (int) m.getValue().getX();
+                    int y = (int) m.getValue().getY();
+                    points.add(new Point2D(x,y));
+                }
+
                 while ((agentName = agentsQueue.take())!=null && !agentName.equals("")) {
-                    int x = new Random().ints(imageHeightXY, ((int)canvas_x-imageHeightXY)).findFirst().getAsInt();
-                    int y = new Random().ints(imageHeightXY, ((int)canvas_y-imageHeightXY)).findFirst().getAsInt();
+                    int x=0;
+                    int y=0;
+
+                    while (true) {
+                        //collision prevention
+                        int x0 = new Random().ints(imageHeightXY*multiplier, ((int)canvas_x-(imageHeightXY*multiplier))).findFirst().getAsInt();
+                        int y0 = new Random().ints(imageHeightXY*multiplier, ((int)canvas_y-(imageHeightXY*multiplier))).findFirst().getAsInt();
+                        Point2D point2D2Compare = new Point2D(x0,y0);
+                        if(!points.contains(point2D2Compare)) {
+                            x = (int) point2D2Compare.x;
+                            y = (int) point2D2Compare.y;
+                            break;
+                        }
+                    }
+
                     String finalAgentName = agentName;
+                    int finalX = x;
+                    int finalY = y;
                     Platform.runLater(new Runnable() {
                         public void run() {
-                            renderImage(root, x, y, finalAgentName);
+                            renderImage(root, finalX, finalY, finalAgentName);
                         }
                     });
+
                 }
                 return null;
             }
@@ -267,25 +297,25 @@ public class HelloFX extends Application {
         ImageView iv = null;
         if (agentName.contains("PowerGenAgent")) {
             iv = new ImageView(ig);
-            iv.setFitHeight(imageHeightXY);
-            iv.setFitWidth(imageHeightXY);
+            iv.setFitHeight(imageHeightXY*multiplier);
+            iv.setFitWidth(imageHeightXY*multiplier);
         } else if (agentName.contains("PowerStoreDisAgent")) {
             iv = new ImageView(ig1);
-            iv.setFitHeight(imageHeightXY);
-            iv.setFitWidth(imageHeightXY);
+            iv.setFitHeight(imageHeightXY*multiplier);
+            iv.setFitWidth(imageHeightXY*multiplier);
         } else if (agentName.contains("SmartHomeAgent")) {
             iv = new ImageView(ig2);
-            iv.setFitHeight(homeImageXY);
-            iv.setFitWidth(homeImageXY);
+            iv.setFitHeight(homeImageXY*multiplier);
+            iv.setFitWidth(homeImageXY*multiplier);
         } else if (agentName.contains("EVAgent")) {
             iv = new ImageView(ig3);
-            iv.setFitHeight(evImageXY);
-            iv.setFitWidth(evImageXY*1.75);
+            iv.setFitHeight(evImageXY*multiplier);
+            iv.setFitWidth(evImageXY*1.75*multiplier);
         }
         iv.setX(x);
         iv.setY(y);
         powAgentMap.put(agentName, iv);
-        mapsInstance.MapAgentLocation(agentName, iv);
+        mapsInstance.mapAgentLocation(agentName, iv);
         g.getChildren().addAll(iv);
     }
 

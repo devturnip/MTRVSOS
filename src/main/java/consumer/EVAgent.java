@@ -30,6 +30,17 @@ public class EVAgent extends Agent {
     protected void setup() {
         super.setup();
         addBehaviour(new InitPosition(this, 2000));
+
+        /*
+        EV Behaviour writeup:
+        Randomly pick 2 separate nodes within specified distance. (avg travel distance to be surveyed from studies.
+        each unit of point travelled should represent some distance: 0,0 - 0,1
+        - 100kWh battery in a Tesla Model S (above) is capable of delivering a maximum of 100 kilowatts of energy for one hour straight.
+
+        Others:
+        JavaFX uses reverse cartesian coordinates system; 0,0 means upper left corner.
+        As Y values increases, point moves downwards from top.
+         */
     }
 
     @Override
