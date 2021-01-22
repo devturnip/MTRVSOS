@@ -12,14 +12,14 @@ import javafx.scene.image.ImageView;
 import utils.Maps;
 import utils.Utils;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class EVAgent extends Agent {
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
+    private double canvas_x = 1280;
+    private double canvas_y = 1020;
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
@@ -75,14 +75,89 @@ public class EVAgent extends Agent {
     }
 
     private void travel() {
+        final Point2D[] currentPoint = {new Point2D((int) agent_X, (int) agent_Y)};
+        Point2D destPoint = new Point2D();
+
+        while (true) {
+            int x0 = new Random().ints(0, ((int)(canvas_x-agentImageView.getFitHeight()))).findFirst().getAsInt();
+            int y0 = new Random().ints(0, ((int)(canvas_y-agentImageView.getFitWidth()))).findFirst().getAsInt();
+            destPoint = new Point2D(x0,y0);
+            if (currentPoint[0].distance(destPoint) > 500) {
+                System.out.println("DEST:"+x0+":"+y0);
+                break;
+            }
+        }
+
+        double destinationDistance = currentPoint[0].distance(destPoint);
+
+        Point2D UP = new Point2D(-1,0);
+        Point2D DOWN = new Point2D(1,0);
+        Point2D LEFT = new Point2D(0,-1);
+        Point2D RIGHT = new Point2D(0,1);
+
+        Point2D finalDestPoint = destPoint;
         Task travel = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                for (int i=0; i<100; i++) {
-                    agentImageView.setX(agent_X+i);
-                    agentImageView.setY(agent_Y);
-                    Thread.sleep(10);
+
+                while (true) {
+                    Point2D nowPoint = new Point2D((int)agentImageView.getX(), (int)agentImageView.getY());
+                    int currentX = (int) nowPoint.x;
+                    int currentY = (int) nowPoint.y;
+
+                    System.out.println("NX:"+nowPoint.x+" NY:"+nowPoint.y);
+
+
+                    Point2D NUP = new Point2D(currentX-1,currentY);
+                    Point2D NDOWN = new Point2D(currentX+1,currentY);
+                    Point2D NLEFT = new Point2D(currentX,currentY-1);
+                    Point2D NRIGHT = new Point2D(currentX,currentY+1);
+
+                    double distNUP = nowPoint.distance(NUP);
+                    double distNDOWN = nowPoint.distance(NDOWN);
+                    double distNLEFT = nowPoint.distance(NLEFT);
+                    double distNRIGHT = nowPoint.distance(NRIGHT);
+
+                    ArrayList<Double> distances = new ArrayList<>();
+                    distances.add(distNUP);
+                    distances.add(distNDOWN);
+                    distances.add(distNLEFT);
+                    distances.add(distNRIGHT);
+
+                    double maxMoved = Collections.max(distances);
+
+                    if(maxMoved == distNUP){
+                        agentImageView.setX(NUP.x);
+                        agentImageView.setY(NUP.y);
+                    }
+                    else if (maxMoved == distNDOWN){
+                        agentImageView.setX(NDOWN.x);
+                        agentImageView.setY(NDOWN.y);
+                    }
+                    else if(maxMoved == distNLEFT){
+                        agentImageView.setX(NLEFT.x);
+                        agentImageView.setY(NLEFT.y);
+                    }
+                    else if(maxMoved == distNRIGHT){
+                        agentImageView.setX(NRIGHT.x);
+                        agentImageView.setY(NRIGHT.y);
+                    } else {
+                        System.out.println("NOTMOVING");
+                    }
+
+                    if (nowPoint.distance(finalDestPoint)<=0) {
+                        System.out.println("BROKEN FROM TRAVEL");
+                        updateSelfPosition();
+                        break;
+                    }
+                    updateSelfPosition();
+                    Thread.sleep(20);
                 }
+
+//                for (int i=0; i<100; i++) {
+//                    agentImageView.relocate(agent_X+i, agent_Y);
+//                    Thread.sleep(10);
+//                }
                 return null;
             }
         }; new Thread(travel).start();
