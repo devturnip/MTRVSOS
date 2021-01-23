@@ -113,10 +113,11 @@ public class EVAgent extends Agent {
                     Point2D NLEFT = new Point2D(currentX,currentY-1);
                     Point2D NRIGHT = new Point2D(currentX,currentY+1);
 
-                    double distNUP = nowPoint.distance(NUP);
-                    double distNDOWN = nowPoint.distance(NDOWN);
-                    double distNLEFT = nowPoint.distance(NLEFT);
-                    double distNRIGHT = nowPoint.distance(NRIGHT);
+
+                    double distNUP = finalDestPoint.distance(NUP);
+                    double distNDOWN = finalDestPoint.distance(NDOWN);
+                    double distNLEFT = finalDestPoint.distance(NLEFT);
+                    double distNRIGHT = finalDestPoint.distance(NRIGHT);
 
                     ArrayList<Double> distances = new ArrayList<>();
                     distances.add(distNUP);
@@ -124,7 +125,8 @@ public class EVAgent extends Agent {
                     distances.add(distNLEFT);
                     distances.add(distNRIGHT);
 
-                    double maxMoved = Collections.max(distances);
+                    //choose greatest reduction in distances moved
+                    double maxMoved = Collections.min(distances);
 
                     if(maxMoved == distNUP){
                         agentImageView.setX(NUP.x);
