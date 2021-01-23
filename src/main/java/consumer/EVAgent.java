@@ -7,6 +7,7 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.image.ImageView;
 import utils.Maps;
@@ -21,6 +22,8 @@ public class EVAgent extends Agent {
     private double canvas_x = 1280;
     private double canvas_y = 1020;
     private boolean isTravelling = false;
+    private int moveDistance = 50;
+    private int moveDistanceStatic = 50;
 
 
     private Maps mapsInstance = Maps.getMapsInstance();
@@ -39,7 +42,7 @@ public class EVAgent extends Agent {
         super.setup();
         addBehaviour(new InitPosition(this, 2000));
         addBehaviour(new UpdatePositionList(this, 500));
-        addBehaviour(new MoveCar(this, 4000));
+        addBehaviour(new MoveCar(this, 5000));
 
         /*
         EV Behaviour writeup:
@@ -105,17 +108,18 @@ public class EVAgent extends Agent {
             protected Void call() throws Exception {
 
                 while (true) {
+                    //updateSelfPosition();
                     Point2D nowPoint = new Point2D((int)agentImageView.getX(), (int)agentImageView.getY());
                     int currentX = (int) nowPoint.x;
                     int currentY = (int) nowPoint.y;
 
-                    System.out.println("NX:"+nowPoint.x+" NY:"+nowPoint.y);
+                    System.out.println(getLocalName()+" NX:"+nowPoint.x+" NY:"+nowPoint.y + " MOVEDIST:" + moveDistance);
 
 
-                    Point2D NUP = new Point2D(currentX-1,currentY);
-                    Point2D NDOWN = new Point2D(currentX+1,currentY);
-                    Point2D NLEFT = new Point2D(currentX,currentY-1);
-                    Point2D NRIGHT = new Point2D(currentX,currentY+1);
+                    Point2D NUP = new Point2D(currentX-moveDistance,currentY);
+                    Point2D NDOWN = new Point2D(currentX+moveDistance,currentY);
+                    Point2D NLEFT = new Point2D(currentX,currentY-moveDistance);
+                    Point2D NRIGHT = new Point2D(currentX,currentY+moveDistance);
 
 
                     double distNUP = finalDestPoint.distance(NUP);
@@ -134,42 +138,74 @@ public class EVAgent extends Agent {
 
                     if(maxMoved == distNUP){
                         isTravelling = true;
-                        agentImageView.setX(NUP.x);
-                        agentImageView.setY(NUP.y);
+                        System.out.println(getLocalName()+":UP");
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                agentImageView.setX(NUP.x);
+                                agentImageView.setY(NUP.y);
+                            }
+                        });
                     }
                     else if (maxMoved == distNDOWN){
                         isTravelling = true;
-                        agentImageView.setX(NDOWN.x);
-                        agentImageView.setY(NDOWN.y);
+                        System.out.println(getLocalName()+":DOWN");
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                agentImageView.setX(NDOWN.x);
+                                agentImageView.setY(NDOWN.y);
+                            }
+                        });
+
                     }
                     else if(maxMoved == distNLEFT){
                         isTravelling = true;
-                        agentImageView.setX(NLEFT.x);
-                        agentImageView.setY(NLEFT.y);
+                        System.out.println(getLocalName()+":LEFT");
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                agentImageView.setX(NLEFT.x);
+                                agentImageView.setY(NLEFT.y);
+                            }
+                        });
                     }
                     else if(maxMoved == distNRIGHT){
                         isTravelling = true;
-                        agentImageView.setX(NRIGHT.x);
-                        agentImageView.setY(NRIGHT.y);
+                        System.out.println(getLocalName()+":RIGHT");
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                agentImageView.setX(NRIGHT.x);
+                                agentImageView.setY(NRIGHT.y);
+
+                            }
+                        });
 
                     } else {
                         //isTravelling = false;
                         System.out.println("NOTMOVING");
+                        break;
                     }
 
                     if (nowPoint.distance(finalDestPoint)<=0) {
                         isTravelling = false;
                         System.out.println("BROKEN FROM TRAVEL");
-                        updateSelfPosition();
                         break;
+                    } else if (nowPoint.distance(finalDestPoint)<=50 && nowPoint.distance(finalDestPoint)>5){
+                        moveDistance = 5;
+                    } else if (nowPoint.distance(finalDestPoint)<=5 && nowPoint.distance(finalDestPoint)>0) {
+                        moveDistance = 1;
+                    } else {
+                        moveDistance = moveDistanceStatic;
                     }
-                    updateSelfPosition();
-                    Thread.sleep(1);
+                    Thread.sleep(50);
                 }
 
                 return null;
             }
         }; new Thread(travel).start();
+
 
     }
 
@@ -215,6 +251,7 @@ public class EVAgent extends Agent {
            if (isTravelling == false) {
                travel();
            } else {
+               //updateSelfPosition();
                block();
            }
        }

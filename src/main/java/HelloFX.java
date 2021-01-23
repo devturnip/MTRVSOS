@@ -35,7 +35,7 @@ public class HelloFX extends Application {
     private int numPowerAgents = 3;
     private int numPowerDisAgents = 3;
     private int numSmartHomeAgents = 5;
-    private int numEVAgents = 1;
+    private int numEVAgents = 3;
 
     //VARS
     private String SoSAgentContainerName = "SoSAgentContainer";
