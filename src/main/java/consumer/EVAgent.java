@@ -20,6 +20,8 @@ public class EVAgent extends Agent {
     private ImageView agentImageView;
     private double canvas_x = 1280;
     private double canvas_y = 1020;
+    private boolean isTravelling = false;
+
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
@@ -90,10 +92,12 @@ public class EVAgent extends Agent {
 
         double destinationDistance = currentPoint[0].distance(destPoint);
 
+        /*
         Point2D UP = new Point2D(-1,0);
         Point2D DOWN = new Point2D(1,0);
         Point2D LEFT = new Point2D(0,-1);
         Point2D RIGHT = new Point2D(0,1);
+        */
 
         Point2D finalDestPoint = destPoint;
         Task travel = new Task<Void>() {
@@ -129,37 +133,40 @@ public class EVAgent extends Agent {
                     double maxMoved = Collections.min(distances);
 
                     if(maxMoved == distNUP){
+                        isTravelling = true;
                         agentImageView.setX(NUP.x);
                         agentImageView.setY(NUP.y);
                     }
                     else if (maxMoved == distNDOWN){
+                        isTravelling = true;
                         agentImageView.setX(NDOWN.x);
                         agentImageView.setY(NDOWN.y);
                     }
                     else if(maxMoved == distNLEFT){
+                        isTravelling = true;
                         agentImageView.setX(NLEFT.x);
                         agentImageView.setY(NLEFT.y);
                     }
                     else if(maxMoved == distNRIGHT){
+                        isTravelling = true;
                         agentImageView.setX(NRIGHT.x);
                         agentImageView.setY(NRIGHT.y);
+
                     } else {
+                        //isTravelling = false;
                         System.out.println("NOTMOVING");
                     }
 
                     if (nowPoint.distance(finalDestPoint)<=0) {
+                        isTravelling = false;
                         System.out.println("BROKEN FROM TRAVEL");
                         updateSelfPosition();
                         break;
                     }
                     updateSelfPosition();
-                    Thread.sleep(20);
+                    Thread.sleep(1);
                 }
 
-//                for (int i=0; i<100; i++) {
-//                    agentImageView.relocate(agent_X+i, agent_Y);
-//                    Thread.sleep(10);
-//                }
                 return null;
             }
         }; new Thread(travel).start();
@@ -175,7 +182,8 @@ public class EVAgent extends Agent {
         @Override
         protected void onWake() {
             super.onWake();
-            travel();
+            addBehaviour(new TravelAround(myAgent, 2000));
+            //travel();
         }
     }
 
@@ -196,13 +204,21 @@ public class EVAgent extends Agent {
         }
     }
 
-    private class TravelAround extends CyclicBehaviour {
+   private class TravelAround extends TickerBehaviour {
 
-        @Override
-        public void action() {
+       public TravelAround(Agent a, long period) {
+           super(a, period);
+       }
 
-        }
-    }
+       @Override
+       protected void onTick() {
+           if (isTravelling == false) {
+               travel();
+           } else {
+               block();
+           }
+       }
+   }
 
     private class UpdatePositionList extends TickerBehaviour {
 
