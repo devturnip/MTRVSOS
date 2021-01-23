@@ -1,3 +1,4 @@
+import com.sun.javafx.geom.Point2D;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
@@ -10,15 +11,13 @@ import javafx.concurrent.Task;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import utils.Maps;
 import utils.Utils;
 
-import java.util.HashMap;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -27,20 +26,27 @@ public class HelloFX extends Application {
     //FLAGS
     private String PORT_NAME = "7778";
     private String HOSTNAME = "localhost";
+    private int multiplier = 2;
     private int imageHeightXY = 30;
-    private double canvas_x = 640;
-    private double canvas_y = 480;
-    private int NumPowerAgents = 3;
-    private int NumPowerDisAgents = 6;
-    private int NumSmartHomeAgents = 30;
+    private int homeImageXY = 20;
+    private int evImageXY = 15;
+    private double canvas_x = 1280;
+    private double canvas_y = 1020;
+    private int numPowerAgents = 3;
+    private int numPowerDisAgents = 3;
+    private int numSmartHomeAgents = 5;
+    private int numEVAgents = 20;
 
     //VARS
     private String SoSAgentContainerName = "SoSAgentContainer";
-    private ContainerController powerAgentContainerController;
-    private  ContainerController smartHomeAgentContainerController;
     private String powerAgentContainerName  = "PowerAgentContainer";
     private String smartHomeAgentContainerName  = "SmartHomeAgentContainer";
-    private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
+    private String evAgentContainerName = "EVAgentContainer";
+    private ContainerController powerAgentContainerController;
+    private ContainerController smartHomeAgentContainerController;
+    private ContainerController sosAgentContainerController;
+    private ContainerController evAgentContainerController;
+    //private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
 
     private BlockingQueue<String> agentsQueue = new LinkedBlockingQueue<>();
     private Utils utility = new Utils();
@@ -51,9 +57,7 @@ public class HelloFX extends Application {
         Group root = new Group();
         Canvas canvas = new Canvas(canvas_x, canvas_y);
 
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        Image ig = new Image(getClass().getResource("gen.png").toExternalForm());
-        Image ig1 = new Image(getClass().getResource("power_storage.png").toExternalForm());
+
 
         Runtime runtime = Runtime.instance();
 
@@ -61,16 +65,20 @@ public class HelloFX extends Application {
             @Override
             protected Void call() throws Exception {
 
-                for (int i=1; i<=NumPowerAgents; i++) {
+                for (int i=1; i<=numPowerAgents; i++) {
                     String agentName = startPowerAgents(powerAgentContainerController, i);
                     agentsQueue.put(agentName);
                 }
-                for (int i=1; i<=NumPowerDisAgents; i++) {
+                for (int i=1; i<=numPowerDisAgents; i++) {
                     String agentName = startPowerDistributionAgents(powerAgentContainerController, i);
                     agentsQueue.put(agentName);
                 }
-                for (int i=1; i<=NumSmartHomeAgents; i++) {
+                for (int i=1; i<=numSmartHomeAgents; i++) {
                     String agentName = startSmartHomeAgent(smartHomeAgentContainerController, i);
+                    agentsQueue.put(agentName);
+                }
+                for (int i=1; i<=numEVAgents; i++) {
+                    String agentName = startEVAgent(evAgentContainerController, i);
                     agentsQueue.put(agentName);
                 }
                 return null;
@@ -85,6 +93,7 @@ public class HelloFX extends Application {
                   public void run() {
                       startPowerContainer(runtime);
                       startSmartHomeContainer(runtime);
+                      startEVContainer(runtime);
                       startSoSAgent(runtime);
                       new Thread(task).start();
                   }
@@ -102,21 +111,47 @@ public class HelloFX extends Application {
             @Override
             protected Void call() throws Exception {
                 String agentName = "";
+                HashMap<String, Point2D> allAgentsMap = mapsInstance.getAgentsMappedPoint2D();
+                Iterator locationMap = allAgentsMap.entrySet().iterator();
+                ArrayList<Point2D> points = new ArrayList<>();
+
+                while (locationMap.hasNext()) {
+                    Map.Entry<String, Point2D> m = (Map.Entry<String, Point2D>) locationMap.next();
+                    points.add(m.getValue());
+                }
+
                 while ((agentName = agentsQueue.take())!=null && !agentName.equals("")) {
-                    int x = new Random().ints(imageHeightXY, ((int)canvas_x-imageHeightXY)).findFirst().getAsInt();
-                    int y = new Random().ints(imageHeightXY, ((int)canvas_y-imageHeightXY)).findFirst().getAsInt();
+                    int x=0;
+                    int y=0;
+
+                    while (true) {
+                        //collision prevention
+                        int x0 = new Random().ints(imageHeightXY*multiplier, ((int)canvas_x-(imageHeightXY*multiplier))).findFirst().getAsInt();
+                        int y0 = new Random().ints(imageHeightXY*multiplier, ((int)canvas_y-(imageHeightXY*multiplier))).findFirst().getAsInt();
+                        Point2D point2D2Compare = new Point2D(x0,y0);
+                        if(!points.contains(point2D2Compare)) {
+                            x = (int) point2D2Compare.x;
+                            y = (int) point2D2Compare.y;
+                            break;
+                        }
+                    }
+
                     String finalAgentName = agentName;
+                    int finalX = x;
+                    int finalY = y;
                     Platform.runLater(new Runnable() {
                         public void run() {
-                            renderImage(root, x, y, finalAgentName);
+                            renderImage(root, finalX, finalY, finalAgentName);
                         }
                     });
+
                 }
                 return null;
             }
         }; new Thread(render).start();
 
         root.getChildren().addAll(canvas);
+        mapsInstance.setGroup(root);
         stage.setScene(new Scene(root));
         stage.show();
     }
@@ -126,8 +161,11 @@ public class HelloFX extends Application {
         super.stop();
         try {
             powerAgentContainerController.kill();
-            //should probably implement a cleaner way
+            smartHomeAgentContainerController.kill();
             powerAgentContainerController.getPlatformController().kill();
+            smartHomeAgentContainerController.getPlatformController().kill();
+            sosAgentContainerController.kill();
+            sosAgentContainerController.getPlatformController().kill();
             Runtime.instance().shutDown();
         } catch (Exception e) {
             System.out.println(e);
@@ -140,6 +178,7 @@ public class HelloFX extends Application {
         profile.setParameter(Profile.MAIN_HOST, HOSTNAME);
         profile.setParameter(Profile.MAIN_PORT, PORT_NAME);
         ContainerController containerController = runtime.createAgentContainer(profile);
+        sosAgentContainerController = containerController;
         String agentName = "SoSAgent";
         try {
             AgentController ag = containerController.createNewAgent(agentName, "SoS.SoSAgent",
@@ -150,6 +189,15 @@ public class HelloFX extends Application {
         }
     }
 
+    private void startEVContainer(Runtime runtime) {
+        Profile profile = new ProfileImpl();
+        profile.setParameter(Profile.CONTAINER_NAME, evAgentContainerName);
+        profile.setParameter(Profile.MAIN_HOST, HOSTNAME);
+        profile.setParameter(Profile.MAIN_PORT, PORT_NAME);
+        ContainerController containerController = runtime.createAgentContainer(profile);
+        evAgentContainerController = containerController;
+    }
+
     private void startSmartHomeContainer(Runtime runtime) {
         Profile profile = new ProfileImpl();
         profile.setParameter(Profile.CONTAINER_NAME, smartHomeAgentContainerName);
@@ -157,6 +205,22 @@ public class HelloFX extends Application {
         profile.setParameter(Profile.MAIN_PORT, PORT_NAME);
         ContainerController containerController = runtime.createAgentContainer(profile);
         smartHomeAgentContainerController = containerController;
+    }
+
+    private String startEVAgent(ContainerController cc, int agentNum) {
+        String agentName = "";
+        if (cc != null) {
+            agentName = "EVAgent_" + String.valueOf(agentNum);
+            try {
+                AgentController ag = cc.createNewAgent(agentName, "consumer.EVAgent",
+                        new Object[]{});
+                ag.start();
+            } catch (StaleProxyException e) {
+                e.printStackTrace();
+            }
+            return agentName;
+        }
+        return  agentName;
     }
 
     private String startSmartHomeAgent(ContainerController cc, int agentNum) {
@@ -222,24 +286,31 @@ public class HelloFX extends Application {
         Image ig = new Image(getClass().getResource("gen.png").toExternalForm());
         Image ig1 = new Image(getClass().getResource("power_storage.png").toExternalForm());
         Image ig2 = new Image(getClass().getResource("smart_home.png").toExternalForm());
+        Image ig3 = new Image(getClass().getResource("ev.png").toExternalForm());
         ImageView iv = null;
         if (agentName.contains("PowerGenAgent")) {
             iv = new ImageView(ig);
-            iv.setFitHeight(imageHeightXY);
-            iv.setFitWidth(imageHeightXY);
+            iv.setFitHeight(imageHeightXY*multiplier);
+            iv.setFitWidth(imageHeightXY*multiplier);
         } else if (agentName.contains("PowerStoreDisAgent")) {
             iv = new ImageView(ig1);
-            iv.setFitHeight(imageHeightXY);
-            iv.setFitWidth(imageHeightXY);
+            iv.setFitHeight(imageHeightXY*multiplier);
+            iv.setFitWidth(imageHeightXY*multiplier);
         } else if (agentName.contains("SmartHomeAgent")) {
             iv = new ImageView(ig2);
-            iv.setFitHeight(20);
-            iv.setFitWidth(20);
+            iv.setFitHeight(homeImageXY*multiplier);
+            iv.setFitWidth(homeImageXY*multiplier);
+        } else if (agentName.contains("EVAgent")) {
+            iv = new ImageView(ig3);
+            iv.setFitHeight(evImageXY*multiplier);
+            iv.setFitWidth(evImageXY*1.75*multiplier);
         }
         iv.setX(x);
         iv.setY(y);
-        powAgentMap.put(agentName, iv);
-        mapsInstance.MapAgentLocation(agentName, iv);
+        Point2D point2D = new Point2D((int)x,(int)y);
+        mapsInstance.mapAgentLocation(agentName, point2D);
+        //powAgentMap.put(agentName, iv);
+        mapsInstance.mapAgentLocation(agentName, iv);
         g.getChildren().addAll(iv);
     }
 

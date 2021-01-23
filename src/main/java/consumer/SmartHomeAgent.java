@@ -5,6 +5,7 @@ import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
+import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
 import javafx.scene.image.ImageView;
 import power.PowerStoreDisAgent;
@@ -51,11 +52,18 @@ public class SmartHomeAgent extends Agent {
         initAppliances();
         System.out.println(getLocalName()+ "'s total power consumption: "+ totalAppliancePowerConsumption);
         addBehaviour(new SmartHomeAgent.InitPosition(this, 2000));
-//        addBehaviour(new ReceiveMessage());
-//        addBehaviour(new ConsumeElectricity(this, rateSecs));
-
         addBehaviour(new ReceiveMessage2());
         addBehaviour(new ConsumeElectricity2(this, rateSecs));
+    }
+
+    @Override
+    protected void takeDown() {
+        super.takeDown();
+        System.out.println(getLocalName() + " takedown. Killing...");
+        try { DFService.deregister(this); }
+        catch (Exception e) {}
+        mapsInstance.removeUI(agentImageView);
+        doDelete();
     }
 
     private void initAppliances() {
@@ -131,6 +139,7 @@ public class SmartHomeAgent extends Agent {
                             currentNeighbour = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator().next();
                             utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
                             System.out.println("Break from loop:"+count);
+                            acceptSent = true;
                             break;
                         }
                     }

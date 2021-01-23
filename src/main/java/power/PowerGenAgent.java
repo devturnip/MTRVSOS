@@ -52,8 +52,12 @@ public class PowerGenAgent extends Agent {
     @Override
     protected void takeDown() {
         super.takeDown();
+        System.out.println(getLocalName() + " takedown. Killing...");
         try { DFService.deregister(this); }
         catch (Exception e) {}
+        mapsInstance.removeUI(agentImageView);
+        doDelete();
+
     }
 
     protected void setup() {
