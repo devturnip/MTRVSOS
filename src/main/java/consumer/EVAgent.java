@@ -7,6 +7,7 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
+import jade.domain.DFService;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.image.ImageView;
@@ -59,6 +60,9 @@ public class EVAgent extends Agent {
     @Override
     protected void takeDown() {
         super.takeDown();
+        System.out.println(getLocalName() + " takedown. Killing...");
+        mapsInstance.removeUI(agentImageView);
+        doDelete();
     }
 
     private void initPosition() {
