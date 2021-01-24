@@ -7,6 +7,8 @@ import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
 import javafx.scene.image.ImageView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
@@ -31,11 +33,14 @@ public class PowerStoreDisAgent extends Agent {
     private int GREEN = 1;
     private int BLUE = 2;
 
+    //logs
+    private static Logger LOGGER = LoggerFactory.getLogger(PowerStoreDisAgent.class);
+
     @Override
     protected void setup() {
         super.setup();
         determineCapacity();
-        System.out.println(getAID().getName() + " started with capacity of " + maxCapacity);
+        LOGGER.info(getLocalName() + " started with capacity of " + maxCapacity);
 
         Utils utils = new Utils();
         utils.registerServices(this, "Power-Storage_Distribution");
@@ -47,7 +52,7 @@ public class PowerStoreDisAgent extends Agent {
     @Override
     protected void takeDown() {
         super.takeDown();
-        System.out.println(getLocalName() + " takedown. Killing...");
+        LOGGER.info(getLocalName() + " takedown. Killing...");
         try { DFService.deregister(this); }
         catch (Exception e) {}
         mapsInstance.removeUI(agentImageView);
@@ -66,7 +71,7 @@ public class PowerStoreDisAgent extends Agent {
         agentImageView = iv;
         agent_X = iv.getX();
         agent_Y = iv.getY();
-        System.out.println("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
+        LOGGER.debug("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
     }
 
     private class InitPosition extends WakerBehaviour {
@@ -99,7 +104,7 @@ public class PowerStoreDisAgent extends Agent {
                     powerInstance.addPowerLevel(addTo);
                     holdCapacity = holdCapacity + addTo;
                 }
-                System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                 if (currentColour != GREEN) {
                     try {
                         mapsInstance.changeColor(agentImageView, "GREEN");
@@ -109,7 +114,7 @@ public class PowerStoreDisAgent extends Agent {
                     currentColour = GREEN;
                 }
             } else if (holdCapacity >= maxCapacity) {
-                System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
+                LOGGER.info("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
                 if (currentColour != BLUE) {
                     try {
                         mapsInstance.changeColor(agentImageView, "BLUE");
@@ -134,7 +139,7 @@ public class PowerStoreDisAgent extends Agent {
                     case 11:
                         contents = msg.getContent();
                         if (contents.equals("BEGIN_STORE")) {
-                            System.out.println(myAgent.getLocalName() + " received PROPOSE (" + contents + ") from " + msg.getSender().getLocalName());
+                            LOGGER.info(myAgent.getLocalName() + " received PROPOSE (" + contents + ") from " + msg.getSender().getLocalName());
                             ACLMessage reply = msg.createReply();
                             if (holdCapacity == 0 || holdCapacity < maxCapacity) {
                                 reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
@@ -181,7 +186,7 @@ public class PowerStoreDisAgent extends Agent {
                                         }
                                         currentColour = GREEN;
                                     }
-                                    System.out.println(myAgent.getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
+                                    LOGGER.info(myAgent.getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
                                     + ". Current power levels:" + String.valueOf(holdCapacity));
                                     send(reply);
                                 } else if (holdCapacity <= 0 || holdCapacity < toConsume) {

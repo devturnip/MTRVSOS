@@ -20,5 +20,7 @@
     <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-base:15.0.1" level="project" />
     <orderEntry type="library" exported="" name="Maven: org.openjfx:javafx-base:mac:15.0.1" level="project" />
     <orderEntry type="library" name="org.apache.commons:commons-math3:3.6.1" level="project" />
+    <orderEntry type="library" name="org.slf4j:slf4j-api:1.7.30" level="project" />
+    <orderEntry type="library" name="Simple Logging Facade for Java:1.7.30" level="project" />
   </component>
 </module>

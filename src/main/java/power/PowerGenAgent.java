@@ -9,6 +9,8 @@ import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
 import javafx.scene.image.ImageView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
@@ -49,10 +51,13 @@ public class PowerGenAgent extends Agent {
     private int GREEN = 1;
     private int BLUE = 2;
 
+    //logs
+    private static Logger LOGGER = LoggerFactory.getLogger(PowerGenAgent.class);
+
     @Override
     protected void takeDown() {
         super.takeDown();
-        System.out.println(getLocalName() + " takedown. Killing...");
+        LOGGER.info(getLocalName() + " takedown. Killing...");
         try { DFService.deregister(this); }
         catch (Exception e) {}
         mapsInstance.removeUI(agentImageView);
@@ -62,7 +67,7 @@ public class PowerGenAgent extends Agent {
 
     protected void setup() {
         determineCapacity();
-        System.out.println(getAID().getName() + " started with capacity of " + maxCapacity + " and genrate of "
+        LOGGER.info(getAID().getLocalName() + " started with capacity of " + maxCapacity + " and genrate of "
          + toAdd + "/" + rateSecs + " ms.");
 
         Utils utils = new Utils();
@@ -87,20 +92,20 @@ public class PowerGenAgent extends Agent {
         agentImageView = iv;
         agent_X = iv.getX();
         agent_Y = iv.getY();
-        System.out.println("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
+        LOGGER.debug("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
 
     }
 
     private class GeneratePower extends OneShotBehaviour {
         @Override
         public void action() {
-            System.out.println("Obtaining total system power levels...");
+            LOGGER.info("Obtaining total system power levels...");
             Power powerInstance = Power.getPowerInstance();
-            System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+            LOGGER.info("Total power levels:" + powerInstance.showPowerLevels());
 
-            System.out.println("Initial power generation...");
+            LOGGER.info("Initial power generation...");
             powerInstance.addPowerLevel(1000);
-            System.out.println("Total power levels:" + powerInstance.showPowerLevels());
+            LOGGER.info("Total power levels:" + powerInstance.showPowerLevels());
 
         }
     }
@@ -149,7 +154,7 @@ public class PowerGenAgent extends Agent {
                             holdCapacity = holdCapacity + addTo;
                         }
 
-                        System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                        LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                         if (currentColour != GREEN) {
                             try {
                                 mapsInstance.changeColor(agentImageView, "GREEN");
@@ -159,7 +164,7 @@ public class PowerGenAgent extends Agent {
                             currentColour = GREEN;
                         }
                     } else if (holdCapacity >= maxCapacity) {
-                        System.out.println("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
+                        LOGGER.info("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
                         isPaused = true;
                         if (currentColour != BLUE) {
                             try {
@@ -183,7 +188,7 @@ public class PowerGenAgent extends Agent {
                         holdCapacity = holdCapacity + addTo;
                     }
 
-                    System.out.println(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                    LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
                     if (currentColour != GREEN) {
                         try {
                             mapsInstance.changeColor(agentImageView, "GREEN");
@@ -212,7 +217,7 @@ public class PowerGenAgent extends Agent {
                                     //System.out.println("AGENT: " + myAgent.getLocalName() + " CURRENTNEIGHBOUR:" + currentNeighbour + " TEMP:" + temp);
                                     if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && iterator.hasNext()) {
                                         nextNeighbour = (AID) iterator.next();
-                                        System.out.println("CURRENT:" + temp.getLocalName() + " NEXT:" + nextNeighbour.getLocalName());
+                                        LOGGER.debug("CURRENT:" + temp.getLocalName() + " NEXT:" + nextNeighbour.getLocalName());
                                         utility.sendMessage(myAgent, nextNeighbour, "BEGIN_STORE", "PROPOSE");
                                         currentNeighbour = nextNeighbour;
                                         break;
@@ -235,7 +240,7 @@ public class PowerGenAgent extends Agent {
             }
             else if (pmsg != null && pmsg.getContent().equals("STOP")){
                 isOn = false;
-                System.out.println(getAID().getName() + " STOPPING POWER GENERATION...");
+                LOGGER.info(getAID().getName() + " STOPPING POWER GENERATION...");
                 pmsg = null;
                 block();
             }
@@ -279,7 +284,7 @@ public class PowerGenAgent extends Agent {
                                 }
                                 currentColour = GREEN;
                             }
-                            System.out.println(myAgent.getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
+                            LOGGER.info(myAgent.getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
                                     + ". Current power levels:" + String.valueOf(holdCapacity));
                             send(reply);
                         } else if (holdCapacity <= 0 || holdCapacity < toConsume) {

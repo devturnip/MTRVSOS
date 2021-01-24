@@ -4,12 +4,18 @@ import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.WakerBehaviour;
 import jade.lang.acl.ACLMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import power.PowerGenAgent;
 import utils.Utils;
 
 public class SoSAgent extends Agent {
+    //logs
+    private static Logger LOGGER = LoggerFactory.getLogger(SoSAgent.class);
+
     @Override
     protected void setup() {
-        System.out.println(getAID().getName() + " started.");
+        LOGGER.info(getLocalName() + " started.");
         addBehaviour(new ContactPower(this,10000, "START"));
         //addBehaviour(new ContactPower(this,20000, "STOP"));
     }
@@ -33,7 +39,7 @@ public class SoSAgent extends Agent {
                     msg.addReceiver(agents[i]);
                     msg.setContent(message);
                     send(msg);
-                    System.out.println(this.myAgent.getName()+ " sent (" + message + ") to " + agents[i].getName());
+                    LOGGER.info(this.myAgent.getName()+ " sent (" + message + ") to " + agents[i].getName());
                 }
             }
         }
