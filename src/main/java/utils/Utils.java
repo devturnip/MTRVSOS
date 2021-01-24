@@ -10,10 +10,16 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import javafx.geometry.Point2D;
 import javafx.scene.image.ImageView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import power.PowerGenAgent;
 
 import java.util.*;
 
 public class Utils {
+    //logs
+    private static Logger LOGGER = LoggerFactory.getLogger(Utils.class);
+
     public Utils() {
     }
 
@@ -222,8 +228,8 @@ public class Utils {
                 //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName());
                 break;
             case "":
-                System.out.println("ACLType invalid/missing. Please enter correct type.");
-                System.out.println("See jade documentation on ACLMessage FIPA Performative types.");
+                LOGGER.warn("ACLType invalid/missing. Please enter correct type.");
+                LOGGER.warn("See jade documentation on ACLMessage FIPA Performative types.");
                 break;
         }
 
@@ -257,8 +263,8 @@ public class Utils {
                 //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
                 break;
             case "":
-                System.out.println("ACLType invalid/missing. Please enter correct type.");
-                System.out.println("See jade documentation on ACLMessage FIPA Performative types.");
+                LOGGER.warn("ACLType invalid/missing. Please enter correct type.");
+                LOGGER.warn("See jade documentation on ACLMessage FIPA Performative types.");
                 break;
         }
 

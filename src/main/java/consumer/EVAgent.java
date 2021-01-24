@@ -3,14 +3,13 @@ package consumer;
 import com.sun.javafx.geom.Point2D;
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
-import jade.domain.DFService;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.image.ImageView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
@@ -25,7 +24,7 @@ public class EVAgent extends Agent {
     private boolean isTravelling = false;
     private int moveDistance = 50;
     private int moveDistanceStatic = 50;
-
+    private int maxCapacity = 0;
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
@@ -37,6 +36,11 @@ public class EVAgent extends Agent {
     //message sending flags
     private AID currentNeighbour;
     private AID nextNeighbour;
+
+    //logs
+    private static Logger LOGGER = LoggerFactory.getLogger(EVAgent.class);
+
+    //logs
 
     @Override
     protected void setup() {
@@ -65,6 +69,19 @@ public class EVAgent extends Agent {
         doDelete();
     }
 
+    private void initCapacity() {
+        /*
+        EV capacities sourced from:
+        Dixon, J., & Bell, K. (2020).
+        Electric vehicles: Battery capacity, charger power, access to charging and the impacts on distribution networks.
+        ETransportation, 4, 100059. https://doi.org/10.1016/j.etran.2020.100059
+         */
+        //capacities are in kwh: for example 24kwh means in 24 kw of power is used in 1h.
+        List<Integer> carCapacities = Arrays.asList(24, 22, 16, 40, 64, 60, 45, 77);
+        maxCapacity = carCapacities.get(new Random().nextInt(carCapacities.size()));
+        LOGGER.info("CAPACITY OF "+getLocalName() + ": " + maxCapacity + "kwh");
+    }
+
     private void initPosition() {
         HashMap<String, ImageView> hm = mapsInstance.getAgentMap(this.getLocalName(), true);
         HashMap.Entry<String, ImageView> entry = hm.entrySet().iterator().next();
@@ -73,8 +90,9 @@ public class EVAgent extends Agent {
         agentImageView = iv;
         agent_X = iv.getX();
         agent_Y = iv.getY();
-        System.out.println("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
+        LOGGER.debug("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
     }
+
     private void updateSelfPosition() {
         ImageView iv = agentImageView;
         int x_position = (int) iv.getX();
@@ -92,7 +110,7 @@ public class EVAgent extends Agent {
             int y0 = new Random().ints(0, ((int)(canvas_y-agentImageView.getFitWidth()))).findFirst().getAsInt();
             destPoint = new Point2D(x0,y0);
             if (currentPoint[0].distance(destPoint) > 500) {
-                System.out.println("DEST:"+x0+":"+y0);
+                LOGGER.debug("DEST:"+x0+":"+y0);
                 break;
             }
         }
@@ -117,7 +135,7 @@ public class EVAgent extends Agent {
                     int currentX = (int) nowPoint.x;
                     int currentY = (int) nowPoint.y;
 
-                    System.out.println(getLocalName()+" NX:"+nowPoint.x+" NY:"+nowPoint.y + " MOVEDIST:" + moveDistance);
+                    LOGGER.debug(getLocalName()+" NX:"+nowPoint.x+" NY:"+nowPoint.y + " MOVEDIST:" + moveDistance);
 
 
                     Point2D NUP = new Point2D(currentX-moveDistance,currentY);
@@ -142,7 +160,7 @@ public class EVAgent extends Agent {
 
                     if(maxMoved == distNUP){
                         isTravelling = true;
-                        System.out.println(getLocalName()+":UP");
+                        LOGGER.debug(getLocalName()+":UP");
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -153,7 +171,7 @@ public class EVAgent extends Agent {
                     }
                     else if (maxMoved == distNDOWN){
                         isTravelling = true;
-                        System.out.println(getLocalName()+":DOWN");
+                        LOGGER.debug(getLocalName()+":DOWN");
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -165,7 +183,7 @@ public class EVAgent extends Agent {
                     }
                     else if(maxMoved == distNLEFT){
                         isTravelling = true;
-                        System.out.println(getLocalName()+":LEFT");
+                        LOGGER.debug(getLocalName()+":LEFT");
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -176,7 +194,7 @@ public class EVAgent extends Agent {
                     }
                     else if(maxMoved == distNRIGHT){
                         isTravelling = true;
-                        System.out.println(getLocalName()+":RIGHT");
+                        LOGGER.debug(getLocalName()+":RIGHT");
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -188,13 +206,13 @@ public class EVAgent extends Agent {
 
                     } else {
                         //isTravelling = false;
-                        System.out.println("NOTMOVING");
+                        LOGGER.debug("NOTMOVING");
                         break;
                     }
 
                     if (nowPoint.distance(finalDestPoint)<=0) {
                         isTravelling = false;
-                        System.out.println("BROKEN FROM TRAVEL");
+                        LOGGER.debug("BROKEN FROM TRAVEL");
                         break;
                     } else if (nowPoint.distance(finalDestPoint)<=50 && nowPoint.distance(finalDestPoint)>5){
                         moveDistance = 5;
@@ -234,6 +252,7 @@ public class EVAgent extends Agent {
         @Override
         protected void onWake() {
             super.onWake();
+            initCapacity();
             initPosition();
 
             String[] servicesArgs = new String[] {"Power-Storage_Distribution", "Power-Generation"};

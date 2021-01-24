@@ -8,7 +8,8 @@ import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
 import javafx.scene.image.ImageView;
-import power.PowerStoreDisAgent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
@@ -46,11 +47,14 @@ public class SmartHomeAgent extends Agent {
     private int ORANGE = 3;
     private int YELLOWGREEN = 4;
 
+    //logs
+    private static Logger LOGGER = LoggerFactory.getLogger(SmartHomeAgent.class);
+
     @Override
     protected void setup() {
         super.setup();
         initAppliances();
-        System.out.println(getLocalName()+ "'s total power consumption: "+ totalAppliancePowerConsumption);
+        LOGGER.info(getLocalName()+ "'s total appliances power consumption: "+ totalAppliancePowerConsumption);
         addBehaviour(new SmartHomeAgent.InitPosition(this, 2000));
         addBehaviour(new ReceiveMessage2());
         addBehaviour(new ConsumeElectricity2(this, rateSecs));
@@ -59,7 +63,7 @@ public class SmartHomeAgent extends Agent {
     @Override
     protected void takeDown() {
         super.takeDown();
-        System.out.println(getLocalName() + " takedown. Killing...");
+        LOGGER.info(getLocalName() + " takedown. Killing...");
         try { DFService.deregister(this); }
         catch (Exception e) {}
         mapsInstance.removeUI(agentImageView);
@@ -85,7 +89,7 @@ public class SmartHomeAgent extends Agent {
         agentImageView = iv;
         agent_X = iv.getX();
         agent_Y = iv.getY();
-        System.out.println("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
+        LOGGER.debug("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
     }
 
     private class InitPosition extends WakerBehaviour {
@@ -124,21 +128,21 @@ public class SmartHomeAgent extends Agent {
                     while (consumptionEngine.hasNext()) {
                         count+=1;
                         AID temp = (AID) consumptionEngine.next();
-                        System.out.println("Loop:"+count+" temp:" + temp.getLocalName() + " current:" + currentNeighbour.getLocalName());
+                        LOGGER.debug("Loop:"+count+" temp:" + temp.getLocalName() + " current:" + currentNeighbour.getLocalName());
                         if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && consumptionEngine.hasNext()) { //if first item equals to current neighbour
                             nextNeighbour = (AID)consumptionEngine.next();
                             //send to next neighbour in list.
                             utility.sendMessageWithArgs(myAgent, nextNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
                             //current neighbour is next neighbour.
                             currentNeighbour = nextNeighbour;
-                            System.out.println("Break from loop:"+count);
+                            LOGGER.debug("Break from loop:"+count);
                             break;
                         }
                         else if (!consumptionEngine.hasNext()) { //if last item in list
                             //reset current neighbour to first item in list
                             currentNeighbour = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator().next();
                             utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
-                            System.out.println("Break from loop:"+count);
+                            LOGGER.debug("Break from loop:"+count);
                             acceptSent = true;
                             break;
                         }

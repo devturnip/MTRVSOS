@@ -1,4 +1,5 @@
 import com.sun.javafx.geom.Point2D;
+import consumer.EVAgent;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
@@ -13,7 +14,11 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
@@ -35,7 +40,7 @@ public class HelloFX extends Application {
     private int numPowerAgents = 3;
     private int numPowerDisAgents = 3;
     private int numSmartHomeAgents = 5;
-    private int numEVAgents = 20;
+    private int numEVAgents = 3;
 
     //VARS
     private String SoSAgentContainerName = "SoSAgentContainer";
@@ -52,12 +57,16 @@ public class HelloFX extends Application {
     private Utils utility = new Utils();
     private Maps mapsInstance = Maps.getMapsInstance();
 
+    //logs
+    private static Logger LOGGER = LoggerFactory.getLogger(HelloFX.class);
+
     @Override
     public void start(Stage stage) {
         Group root = new Group();
         Canvas canvas = new Canvas(canvas_x, canvas_y);
 
-
+        BorderPane border = new BorderPane();
+        border.setCenter(canvas);
 
         Runtime runtime = Runtime.instance();
 
@@ -150,7 +159,7 @@ public class HelloFX extends Application {
             }
         }; new Thread(render).start();
 
-        root.getChildren().addAll(canvas);
+        root.getChildren().addAll(border);
         mapsInstance.setGroup(root);
         stage.setScene(new Scene(root));
         stage.show();
@@ -168,7 +177,7 @@ public class HelloFX extends Application {
             sosAgentContainerController.getPlatformController().kill();
             Runtime.instance().shutDown();
         } catch (Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
     }
 
