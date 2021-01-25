@@ -279,7 +279,7 @@ public class Utils {
                 msg.setContent(message);
                 msg.addUserDefinedParameter(userDefinedParams.getKey(), userDefinedParams.getValue());
                 sender.send(msg);
-                //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
+                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
                 break;
             case "":
                 LOGGER.warn("ACLType invalid/missing. Please enter correct type.");

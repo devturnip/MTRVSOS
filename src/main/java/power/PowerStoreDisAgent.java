@@ -142,7 +142,7 @@ public class PowerStoreDisAgent extends Agent {
             ACLMessage msg = myAgent.receive();
 
             if (msg != null) {
-                String contents = msg.getContent();
+                String contents = "";
                 int performative = msg.getPerformative();
                 switch (performative) {
                     case 11:
@@ -164,6 +164,7 @@ public class PowerStoreDisAgent extends Agent {
                         break;
                     case 16:
                         contents = msg.getContent();
+                        ACLMessage reply = msg.createReply();
                         switch(contents) {
                             case "ADD":
                                 String key = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getKey();
@@ -180,7 +181,7 @@ public class PowerStoreDisAgent extends Agent {
                                 }
                                 break;
                             case "BEGIN_CONSUME":
-                                ACLMessage reply = msg.createReply();
+//                                reply = msg.createReply();
                                 double toConsume = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
                                 if (holdCapacity >= 0 && holdCapacity >= toConsume) {
                                     reply.setPerformative(ACLMessage.AGREE);
@@ -199,6 +200,32 @@ public class PowerStoreDisAgent extends Agent {
                                     + ". Current power levels:" + String.valueOf(holdCapacity));
                                     send(reply);
                                 } else if (holdCapacity <= 0 || holdCapacity < toConsume) {
+                                    reply.setPerformative(ACLMessage.AGREE);
+                                    reply.setContent("REJECT_CONSUME");
+                                    send(reply);
+                                }
+                                break;
+                            case "BEGIN_CHARGE":
+//                                reply = msg.createReply();
+                                LOGGER.debug(getLocalName()+" received charge request from: "+msg.getSender().getLocalName());
+                                double toCharge = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
+                                if (holdCapacity >= 0 && holdCapacity >= toCharge) {
+                                    reply.setPerformative(ACLMessage.AGREE);
+                                    reply.setContent("ACCEPT_CHARGE");
+                                    holdCapacity = holdCapacity - toCharge;
+                                    powerInstance.subtractPowerLevel(toCharge);
+                                    if (currentColour == BLUE) {
+                                        try {
+                                            mapsInstance.changeColor(agentImageView, "GREEN");
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                        currentColour = GREEN;
+                                    }
+                                    LOGGER.info(myAgent.getLocalName() + " transferred " + toCharge + " to " + msg.getSender().getLocalName()
+                                            + ". Current power levels:" + String.valueOf(holdCapacity));
+                                    send(reply);
+                                } else if (holdCapacity <= 0 || holdCapacity < toCharge) {
                                     reply.setPerformative(ACLMessage.AGREE);
                                     reply.setContent("REJECT_CONSUME");
                                     send(reply);
