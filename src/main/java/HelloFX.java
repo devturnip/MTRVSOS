@@ -1,5 +1,4 @@
 import com.sun.javafx.geom.Point2D;
-import consumer.EVAgent;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
@@ -10,7 +9,6 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -20,10 +18,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
-import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,10 +45,10 @@ public class HelloFX extends Application {
     private int evImageXY = 15;
     private double canvas_x = 1024;
     private double canvas_y = 768;
-    private int numPowerAgents = 1;
-    private int numPowerDisAgents = 1;
-    private int numSmartHomeAgents = 1;
-    private int numEVAgents = 1;
+    private int numPowerAgents = 3;
+    private int numPowerDisAgents = 5;
+    private int numSmartHomeAgents = 10;
+    private int numEVAgents = 3;
 
     //VARS
     private String SoSAgentContainerName = "SoSAgentContainer";

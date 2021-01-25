@@ -1,6 +1,8 @@
 package power;
 
+import com.sun.javafx.geom.Rectangle;
 import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.WakerBehaviour;
@@ -12,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -21,6 +24,7 @@ public class PowerStoreDisAgent extends Agent {
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
+    private ArrayList<Behaviour> behaviourList = new ArrayList<>();
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Power powerInstance = Power.getPowerInstance();
@@ -54,8 +58,12 @@ public class PowerStoreDisAgent extends Agent {
             utils.registerServices(this, "Power-Storage_Distribution");
         }
 
-        addBehaviour(new InitPosition(this, 2000));
-        addBehaviour(new ReceiveMessage());
+        InitPosition initPosition = new InitPosition(this, 2000);
+        ReceiveMessage receiveMessage = new ReceiveMessage();
+        behaviourList.add(initPosition);
+        behaviourList.add(receiveMessage);
+        addBehaviour(initPosition);
+        addBehaviour(receiveMessage);
     }
 
     @Override
@@ -64,6 +72,12 @@ public class PowerStoreDisAgent extends Agent {
         LOGGER.info(getLocalName() + " takedown. Killing...");
         try { DFService.deregister(this); }
         catch (Exception e) {}
+        if(!behaviourList.isEmpty()) {
+            for (Behaviour b: behaviourList){
+                LOGGER.info("Removing behaviour(s): "+b);
+                removeBehaviour(b);
+            }
+        }
         mapsInstance.removeUI(agentImageView);
         doDelete();
     }

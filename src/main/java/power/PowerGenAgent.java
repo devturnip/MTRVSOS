@@ -2,10 +2,7 @@ package power;
 
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.OneShotBehaviour;
-import jade.core.behaviours.TickerBehaviour;
-import jade.core.behaviours.WakerBehaviour;
+import jade.core.behaviours.*;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
 import javafx.scene.image.ImageView;
@@ -37,6 +34,7 @@ public class PowerGenAgent extends Agent {
     private Maps mapsInstance = Maps.getMapsInstance();
     private Map.Entry<AID, Double> nearestNeighbour = null;
     private LinkedHashMap<AID, Double> nearestNeighbours = new LinkedHashMap<>();
+    private ArrayList<Behaviour> behaviourList = new ArrayList<>();
 
     //message sending flags
     private boolean sentCFP = false;
@@ -60,6 +58,12 @@ public class PowerGenAgent extends Agent {
         LOGGER.info(getLocalName() + " takedown. Killing...");
         try { DFService.deregister(this); }
         catch (Exception e) {}
+        if(!behaviourList.isEmpty()) {
+            for (Behaviour b: behaviourList){
+                LOGGER.info("Removing behaviour(s): "+b);
+                removeBehaviour(b);
+            }
+        }
         mapsInstance.removeUI(agentImageView);
         doDelete();
 
@@ -73,10 +77,16 @@ public class PowerGenAgent extends Agent {
         Utils utils = new Utils();
         utils.registerServices(this, "Power-Generation");
 
+        InitPosition initPosition = new InitPosition(this, 2000);
+        ReceiveMessage receiveMessage = new ReceiveMessage();
+        PeriodicPowerGeneration periodicPowerGeneration = new PeriodicPowerGeneration(this, rateSecs);
+        behaviourList.add(initPosition);
+        behaviourList.add(receiveMessage);
+        behaviourList.add(periodicPowerGeneration);
         //addBehaviour(new GeneratePower());
-        addBehaviour(new InitPosition(this, 2000));
-        addBehaviour(new ReceiveMessage());
-        addBehaviour(new PeriodicPowerGeneration(this, rateSecs));
+        addBehaviour(initPosition);
+        addBehaviour(receiveMessage);
+        addBehaviour(periodicPowerGeneration);
     }
 
     private void determineCapacity() {

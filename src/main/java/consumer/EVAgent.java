@@ -1,13 +1,16 @@
 package consumer;
 
 import com.sun.javafx.geom.Point2D;
+import com.sun.javafx.geom.Rectangle;
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.lang.acl.ACLMessage;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +38,14 @@ public class EVAgent extends Agent {
     private LinkedHashMap<AID, Double> nearestNeighbours = new LinkedHashMap<>();
     private Map.Entry<AID, Double> nearestNeighbour = null;
     private HashMap<String, Point2D> listOfAgentPositions = new HashMap<>();
+    private HashMap<String, ImageView> listOfAgentImageViews = new HashMap<>();
+    private ArrayList<Behaviour> behaviourList = new ArrayList<>();
+
+    //colour flags
+    private int currentColour = 0;
+    private int GREEN = 1;
+    private int ORANGE = 2;
+    private int RED = 3;
 
     //message sending flags
     private AID currentNeighbour;
@@ -43,14 +54,18 @@ public class EVAgent extends Agent {
     //logs
     private static Logger LOGGER = LoggerFactory.getLogger(EVAgent.class);
 
-    //logs
-
     @Override
     protected void setup() {
         super.setup();
-        addBehaviour(new InitPosition(this, 2000));
-        addBehaviour(new UpdatePositionList(this, 500));
-        addBehaviour(new MoveCar(this, 5000));
+        InitPosition initPosition = new InitPosition(this,2000);
+        UpdatePositionList updatePositionList = new UpdatePositionList(this, 500);
+        MoveCar moveCar = new MoveCar(this, 5000);
+        behaviourList.add(initPosition);
+        behaviourList.add(updatePositionList);
+        behaviourList.add(moveCar);
+        addBehaviour(initPosition);
+        addBehaviour(updatePositionList);
+        addBehaviour(moveCar);
 
         /*
         EV Behaviour writeup:
@@ -78,8 +93,14 @@ public class EVAgent extends Agent {
     @Override
     protected void takeDown() {
         super.takeDown();
-        System.out.println(getLocalName() + " takedown. Killing...");
+        LOGGER.info(getLocalName() + " takedown. Killing...");
         mapsInstance.removeUI(agentImageView);
+        if(!behaviourList.isEmpty()) {
+            for (Behaviour b: behaviourList){
+                LOGGER.info("Removing behaviour(s): "+b);
+                removeBehaviour(b);
+            }
+        }
         doDelete();
     }
 
@@ -154,7 +175,6 @@ public class EVAgent extends Agent {
                     double toDeduct = consumptionRate * moveDistance;
                     boolean stopCharging = false;
 
-                    //updateSelfPosition();
                     Point2D nowPoint = new Point2D((int) agentImageView.getX(), (int) agentImageView.getY());
                     int currentX = (int) nowPoint.x;
                     int currentY = (int) nowPoint.y;
@@ -192,6 +212,12 @@ public class EVAgent extends Agent {
         Point2D NLEFT = new Point2D(currentX,currentY-moveDistance);
         Point2D NRIGHT = new Point2D(currentX,currentY+moveDistance);
 
+        ArrayList<Point2D> steps = new ArrayList<>();
+        steps.add(NUP);
+        steps.add(NDOWN);
+        steps.add(NLEFT);
+        steps.add(NRIGHT);
+
         double distNUP = destination.distance(NUP);
         double distNDOWN = destination.distance(NDOWN);
         double distNLEFT = destination.distance(NLEFT);
@@ -202,6 +228,20 @@ public class EVAgent extends Agent {
         distances.add(distNDOWN);
         distances.add(distNLEFT);
         distances.add(distNRIGHT);
+
+//        //check for collision and remove collided moves: todo.... doesnt work...
+//        for (int i=0; i<steps.size(); i++){
+//            Iterator iterator = listOfAgentImageViews.entrySet().iterator();
+//            Rectangle2D collisionBox = new Rectangle2D(steps.get(i).x, steps.get(i).y, 15*2,15*1.75*2);
+//            if(iterator.hasNext()) {
+//                Map.Entry pair = (Map.Entry) iterator.next();
+//                ImageView imageView = (ImageView) pair.getValue();
+//                Rectangle2D ivBox = new Rectangle2D(imageView.getX(), imageView.getY(), imageView.getBoundsInParent().getHeight(), imageView.getBoundsInParent().getWidth());
+//                if(ivBox.intersects(collisionBox)){
+//                    distances.remove(i);
+//                }
+//            }
+//        }
         double maxMoved = Collections.min(distances);
 
         if (maxMoved == distNUP) {
@@ -216,6 +256,9 @@ public class EVAgent extends Agent {
                     agentImageView.setY(NUP.y);
                 }
             });
+            if (currentColour!=GREEN) {
+                mapsInstance.changeColor(agentImageView, "GREEN");
+            }
         }
         else if (maxMoved == distNDOWN) {
             breakLoop = false;
@@ -229,7 +272,9 @@ public class EVAgent extends Agent {
                     agentImageView.setY(NDOWN.y);
                 }
             });
-
+            if (currentColour!=GREEN) {
+                mapsInstance.changeColor(agentImageView, "GREEN");
+            }
         }
         else if (maxMoved == distNLEFT) {
             breakLoop = false;
@@ -243,6 +288,9 @@ public class EVAgent extends Agent {
                     agentImageView.setY(NLEFT.y);
                 }
             });
+            if (currentColour!=GREEN) {
+                mapsInstance.changeColor(agentImageView, "GREEN");
+            }
         }
         else if (maxMoved == distNRIGHT) {
             breakLoop = false;
@@ -254,15 +302,19 @@ public class EVAgent extends Agent {
                 public void run() {
                     agentImageView.setX(NRIGHT.x);
                     agentImageView.setY(NRIGHT.y);
-
                 }
             });
-
+            if (currentColour!=GREEN) {
+                mapsInstance.changeColor(agentImageView, "GREEN");
+            }
         }
         else {
             //isTravelling = false;
             LOGGER.debug("NOTMOVING");
             breakLoop = true;
+            if (currentColour!=RED) {
+                mapsInstance.changeColor(agentImageView, "RED");
+            }
         }
 
         if (nowPoint.distance(destination) <= 0 && toCharge == false) {
@@ -285,6 +337,9 @@ public class EVAgent extends Agent {
             LOGGER.debug(getLocalName() + " is at charging stationnnnnnnnnnnnnnnnnnnn. Sending message to " + nearestNeighbour.getKey());
             HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toCharge", String.valueOf(maxCapacity));
             utility.sendMessageWithArgs(this, nearestNeighbour.getKey(), arguments, "BEGIN_CHARGE", "REQUEST");
+            if (currentColour!=ORANGE) {
+                mapsInstance.changeColor(agentImageView, "ORANGE");
+            }
             while (true) {
                 ACLMessage msg = agent.receive();
                 if (msg!=null) {
@@ -371,6 +426,12 @@ public class EVAgent extends Agent {
 
         @Override
         protected void onTick() {
+            HashMap<String, ImageView> hm = mapsInstance.getAgentMap(getLocalName(), true);
+            HashMap.Entry<String, ImageView> entry = hm.entrySet().iterator().next();
+            String agentName = entry.getKey();
+            ImageView iv = entry.getValue();
+            agentImageView = iv;
+            listOfAgentImageViews = mapsInstance.getAgentsMappedLocation();
             listOfAgentPositions = mapsInstance.getAgentsMappedPoint2D();
         }
     }

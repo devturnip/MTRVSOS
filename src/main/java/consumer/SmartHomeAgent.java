@@ -2,6 +2,7 @@ package consumer;
 
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
@@ -13,10 +14,7 @@ import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class SmartHomeAgent extends Agent {
     private HashMap<String, Double> appliancesList = new HashMap<>();
@@ -33,6 +31,7 @@ public class SmartHomeAgent extends Agent {
 
     private LinkedHashMap<AID, Double> nearestNeighbours = new LinkedHashMap<>();
     private Map.Entry<AID, Double> nearestNeighbour = null;
+    private ArrayList<Behaviour> behaviourList = new ArrayList<>();
 
     //message sending flags
     private AID currentNeighbour;
@@ -55,9 +54,16 @@ public class SmartHomeAgent extends Agent {
         super.setup();
         initAppliances();
         LOGGER.info(getLocalName()+ "'s total appliances power consumption: "+ totalAppliancePowerConsumption);
-        addBehaviour(new SmartHomeAgent.InitPosition(this, 2000));
-        addBehaviour(new ReceiveMessage2());
-        addBehaviour(new ConsumeElectricity2(this, rateSecs));
+
+        InitPosition initPosition = new InitPosition(this, 2000);
+        ReceiveMessage2 receiveMessage2 = new ReceiveMessage2();
+        ConsumeElectricity2 consumeElectricity2 = new ConsumeElectricity2(this, rateSecs);
+        behaviourList.add(initPosition);
+        behaviourList.add(receiveMessage2);
+        behaviourList.add(consumeElectricity2);
+        addBehaviour(initPosition);
+        addBehaviour(receiveMessage2);
+        addBehaviour(consumeElectricity2);
     }
 
     @Override
@@ -66,6 +72,12 @@ public class SmartHomeAgent extends Agent {
         LOGGER.info(getLocalName() + " takedown. Killing...");
         try { DFService.deregister(this); }
         catch (Exception e) {}
+        if(!behaviourList.isEmpty()) {
+            for (Behaviour b: behaviourList){
+                LOGGER.info("Removing behaviour(s): "+b);
+                removeBehaviour(b);
+            }
+        }
         mapsInstance.removeUI(agentImageView);
         doDelete();
     }
