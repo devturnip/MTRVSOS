@@ -43,7 +43,16 @@ public class PowerStoreDisAgent extends Agent {
         LOGGER.info(getLocalName() + " started with capacity of " + maxCapacity);
 
         Utils utils = new Utils();
-        utils.registerServices(this, "Power-Storage_Distribution");
+
+        boolean isChargingStation = new Random().nextBoolean();
+
+        if (isChargingStation) {
+            String[] arguments = {"Power-Storage_Distribution","EV-Charging"};
+            utils.registerServices(this, arguments);
+        }
+        else {
+            utils.registerServices(this, "Power-Storage_Distribution");
+        }
 
         addBehaviour(new InitPosition(this, 2000));
         addBehaviour(new ReceiveMessage());

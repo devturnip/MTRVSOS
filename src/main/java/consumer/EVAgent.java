@@ -19,12 +19,14 @@ public class EVAgent extends Agent {
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
-    private double canvas_x = 1280;
-    private double canvas_y = 1020;
+    private double canvas_x = 1024;
+    private double canvas_y = 768;
     private boolean isTravelling = false;
-    private int moveDistance = 50;
-    private int moveDistanceStatic = 50;
-    private int maxCapacity = 0;
+    private int moveDistance = 20;
+    private int moveDistanceStatic = 20;
+    private double maxCapacity = 0;
+    private double holdCapacity = 0;
+    private double consumptionRate = 0;
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
@@ -55,6 +57,17 @@ public class EVAgent extends Agent {
         each unit of point travelled should represent some distance: 0,0 - 0,1
         - 100kWh battery in a Tesla Model S (above) is capable of delivering a maximum of 100 kilowatts of energy for one hour straight.
 
+        In here, every unit of pixel moved should equal 0.1km.
+
+        The below shows the different capacity models and their consumption rate.
+        kwh/ km (Dixon, J., & Bell, K. (2020).)
+        24 kWh: 0.17 kWh/km
+        64 kWh: 0.16 kWh/km
+        100 kWh: 0.24 kWh/km
+
+        Thus for this simulator,for each EVAgent, its consumption rate will be a range from:
+        0.17-0.24
+
         Others:
         JavaFX uses reverse cartesian coordinates system; 0,0 means upper left corner.
         As Y values increases, point moves downwards from top.
@@ -78,8 +91,11 @@ public class EVAgent extends Agent {
          */
         //capacities are in kwh: for example 24kwh means in 24 kw of power is used in 1h.
         List<Integer> carCapacities = Arrays.asList(24, 22, 16, 40, 64, 60, 45, 77);
+        //capacity chosen from uniform distribution of capacities.
         maxCapacity = carCapacities.get(new Random().nextInt(carCapacities.size()));
-        LOGGER.info("CAPACITY OF "+getLocalName() + ": " + maxCapacity + "kwh");
+        holdCapacity = maxCapacity; //all cars start with full charge
+        consumptionRate = (new Random().doubles(0.17, 0.24).findFirst().getAsDouble())/1000;
+        LOGGER.info("MAXCAPACITY OF "+getLocalName() + ": " + maxCapacity + "kwh");
     }
 
     private void initPosition() {
@@ -130,6 +146,12 @@ public class EVAgent extends Agent {
             protected Void call() throws Exception {
 
                 while (true) {
+                    //calculate remaining battery first
+                    double percent = (holdCapacity/maxCapacity)*100;
+                    LOGGER.info(getLocalName()+" at "+ percent + ". Hold:" + holdCapacity + " Max:" + maxCapacity);
+                    double toDeduct = consumptionRate * moveDistance;
+                    boolean stopCharging = false;
+
                     //updateSelfPosition();
                     Point2D nowPoint = new Point2D((int)agentImageView.getX(), (int)agentImageView.getY());
                     int currentX = (int) nowPoint.x;
@@ -137,12 +159,10 @@ public class EVAgent extends Agent {
 
                     LOGGER.debug(getLocalName()+" NX:"+nowPoint.x+" NY:"+nowPoint.y + " MOVEDIST:" + moveDistance);
 
-
                     Point2D NUP = new Point2D(currentX-moveDistance,currentY);
                     Point2D NDOWN = new Point2D(currentX+moveDistance,currentY);
                     Point2D NLEFT = new Point2D(currentX,currentY-moveDistance);
                     Point2D NRIGHT = new Point2D(currentX,currentY+moveDistance);
-
 
                     double distNUP = finalDestPoint.distance(NUP);
                     double distNDOWN = finalDestPoint.distance(NDOWN);
@@ -158,76 +178,92 @@ public class EVAgent extends Agent {
                     //choose greatest reduction in distances moved
                     double maxMoved = Collections.min(distances);
 
-                    if(maxMoved == distNUP){
-                        isTravelling = true;
-                        LOGGER.debug(getLocalName()+":UP");
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                agentImageView.setX(NUP.x);
-                                agentImageView.setY(NUP.y);
-                            }
-                        });
-                    }
-                    else if (maxMoved == distNDOWN){
-                        isTravelling = true;
-                        LOGGER.debug(getLocalName()+":DOWN");
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                agentImageView.setX(NDOWN.x);
-                                agentImageView.setY(NDOWN.y);
-                            }
-                        });
+                    if (percent >= 20 && stopCharging == false) {
+                        if (maxMoved == distNUP) {
+                            isTravelling = true;
+                            LOGGER.debug(getLocalName() + ":UP");
+                            holdCapacity = holdCapacity-toDeduct;
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    agentImageView.setX(NUP.x);
+                                    agentImageView.setY(NUP.y);
+                                }
+                            });
+                        }
+                        else if (maxMoved == distNDOWN) {
+                            isTravelling = true;
+                            LOGGER.debug(getLocalName() + ":DOWN");
+                            holdCapacity = holdCapacity-toDeduct;
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    agentImageView.setX(NDOWN.x);
+                                    agentImageView.setY(NDOWN.y);
+                                }
+                            });
 
-                    }
-                    else if(maxMoved == distNLEFT){
-                        isTravelling = true;
-                        LOGGER.debug(getLocalName()+":LEFT");
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                agentImageView.setX(NLEFT.x);
-                                agentImageView.setY(NLEFT.y);
-                            }
-                        });
-                    }
-                    else if(maxMoved == distNRIGHT){
-                        isTravelling = true;
-                        LOGGER.debug(getLocalName()+":RIGHT");
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                agentImageView.setX(NRIGHT.x);
-                                agentImageView.setY(NRIGHT.y);
+                        }
+                        else if (maxMoved == distNLEFT) {
+                            isTravelling = true;
+                            LOGGER.debug(getLocalName() + ":LEFT");
+                            holdCapacity = holdCapacity-toDeduct;
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    agentImageView.setX(NLEFT.x);
+                                    agentImageView.setY(NLEFT.y);
+                                }
+                            });
+                        }
+                        else if (maxMoved == distNRIGHT) {
+                            isTravelling = true;
+                            LOGGER.debug(getLocalName() + ":RIGHT");
+                            holdCapacity = holdCapacity-toDeduct;
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    agentImageView.setX(NRIGHT.x);
+                                    agentImageView.setY(NRIGHT.y);
 
-                            }
-                        });
+                                }
+                            });
 
-                    } else {
-                        //isTravelling = false;
-                        LOGGER.debug("NOTMOVING");
-                        break;
-                    }
+                        }
+                        else {
+                            //isTravelling = false;
+                            LOGGER.debug("NOTMOVING");
+                            break;
+                        }
 
-                    if (nowPoint.distance(finalDestPoint)<=0) {
-                        isTravelling = false;
-                        LOGGER.debug("BROKEN FROM TRAVEL");
-                        break;
-                    } else if (nowPoint.distance(finalDestPoint)<=50 && nowPoint.distance(finalDestPoint)>5){
-                        moveDistance = 5;
-                    } else if (nowPoint.distance(finalDestPoint)<=5 && nowPoint.distance(finalDestPoint)>0) {
-                        moveDistance = 1;
-                    } else {
-                        moveDistance = moveDistanceStatic;
+                        if (nowPoint.distance(finalDestPoint) <= 0) {
+                            isTravelling = false;
+                            LOGGER.debug("BROKEN FROM TRAVEL");
+                            break;
+                        }
+                        else if (nowPoint.distance(finalDestPoint) <= moveDistanceStatic && nowPoint.distance(finalDestPoint) > 5) {
+                            moveDistance = 5;
+                        }
+                        else if (nowPoint.distance(finalDestPoint) <= 5 && nowPoint.distance(finalDestPoint) > 0) {
+                            moveDistance = 1;
+                        }
+                        else {
+                            moveDistance = moveDistanceStatic;
+                        }
+                        Thread.sleep(50);
                     }
-                    Thread.sleep(50);
+                    else {
+                        stopCharging = true;
+                        //find nearest charging station
+                    }
                 }
 
                 return null;
             }
         }; new Thread(travel).start();
+    }
 
+    private void chargeCar() {
 
     }
 

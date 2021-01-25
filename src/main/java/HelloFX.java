@@ -9,13 +9,18 @@ import jade.wrapper.StaleProxyException;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.*;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +40,8 @@ public class HelloFX extends Application {
     private int imageHeightXY = 30;
     private int homeImageXY = 20;
     private int evImageXY = 15;
-    private double canvas_x = 1280;
-    private double canvas_y = 1020;
+    private double canvas_x = 1024;
+    private double canvas_y = 768;
     private int numPowerAgents = 3;
     private int numPowerDisAgents = 3;
     private int numSmartHomeAgents = 5;
@@ -65,8 +70,21 @@ public class HelloFX extends Application {
         Group root = new Group();
         Canvas canvas = new Canvas(canvas_x, canvas_y);
 
+        ProgressBar progressBar = new ProgressBar();
+        Group progressHolder = new Group(progressBar);
+        progressBar.setPrefSize(15,400);
+        progressBar.getTransforms().setAll(new Translate(0, 400), new Rotate(-90, 0,0));
+
+        HBox hbox = new HBox();
+        hbox.setPadding(new Insets(15,12,15,12));
+        hbox.setSpacing(10);
+        hbox.setStyle("-fx-background-color: #B0C4DE;");
+        hbox.setAlignment(Pos.BASELINE_CENTER);
+        hbox.getChildren().addAll(progressHolder);
+
         BorderPane border = new BorderPane();
         border.setCenter(canvas);
+        border.setBottom(hbox);
 
         Runtime runtime = Runtime.instance();
 
