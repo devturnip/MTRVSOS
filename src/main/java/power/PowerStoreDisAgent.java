@@ -210,7 +210,7 @@ public class PowerStoreDisAgent extends Agent {
 //                                reply = msg.createReply();
                                 LOGGER.debug(getLocalName()+" received charge request from: "+msg.getSender().getLocalName());
                                 double toCharge = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
-                                if (holdCapacity >= 0 && holdCapacity >= toCharge) {
+                                if (holdCapacity > 0 && holdCapacity >= toCharge) {
                                     reply.setPerformative(ACLMessage.AGREE);
                                     reply.setContent("ACCEPT_CHARGE");
                                     holdCapacity = holdCapacity - toCharge;

@@ -48,10 +48,10 @@ public class HelloFX extends Application {
     private int evImageXY = 15;
     private double canvas_x = 1024;
     private double canvas_y = 768;
-    private int numPowerAgents = 3;
-    private int numPowerDisAgents = 3;
-    private int numSmartHomeAgents = 5;
-    private int numEVAgents = 3;
+    private int numPowerAgents = 1;
+    private int numPowerDisAgents = 1;
+    private int numSmartHomeAgents = 1;
+    private int numEVAgents = 1;
 
     //VARS
     private String SoSAgentContainerName = "SoSAgentContainer";

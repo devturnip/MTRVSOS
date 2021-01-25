@@ -180,13 +180,16 @@ public class PowerGenAgent extends Agent {
                     isPaused = false;
 
                     //code to prevent power exceeding maxcapacity
-                    if (tempHolder >= maxCapacity) {
+                    if (tempHolder > maxCapacity) {
                         addTo = tempHolder - maxCapacity;
                         powerInstance.addPowerLevel(addTo);
                         holdCapacity = holdCapacity + addTo;
                     } else {
                         powerInstance.addPowerLevel(addTo);
                         holdCapacity = holdCapacity + addTo;
+                    }
+                    if (holdCapacity >= maxCapacity) {
+                        isPaused = true;
                     }
 
                     LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
