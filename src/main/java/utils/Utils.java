@@ -57,7 +57,26 @@ public class Utils {
         } catch (FIPAException fe) {
             fe.printStackTrace();
         }
+    }
 
+    public void registerServices(Agent a, String[] serviceType) {
+        String fullServiceName = a.getLocalName() + serviceType;
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(a.getAID());
+        ServiceDescription sd = null;
+
+        for (int i=0; i< serviceType.length; i++) {
+            sd = new ServiceDescription();
+            String serviceName = serviceType[i];
+            sd.setType(serviceName);
+            sd.setName(fullServiceName);
+            dfd.addServices(sd);
+        }
+        try {
+            DFService.register(a, dfd);
+        } catch (FIPAException fe) {
+            fe.printStackTrace();
+        }
     }
 
     public LinkedHashMap<AID, Double> getNearestObjectsList (Agent agent1, double ax, double ay, String serviceName) {
@@ -260,7 +279,7 @@ public class Utils {
                 msg.setContent(message);
                 msg.addUserDefinedParameter(userDefinedParams.getKey(), userDefinedParams.getValue());
                 sender.send(msg);
-                //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
+                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
                 break;
             case "":
                 LOGGER.warn("ACLType invalid/missing. Please enter correct type.");

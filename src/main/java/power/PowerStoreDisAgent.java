@@ -1,6 +1,8 @@
 package power;
 
+import com.sun.javafx.geom.Rectangle;
 import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.WakerBehaviour;
@@ -12,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -21,6 +24,7 @@ public class PowerStoreDisAgent extends Agent {
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
+    private ArrayList<Behaviour> behaviourList = new ArrayList<>();
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Power powerInstance = Power.getPowerInstance();
@@ -43,10 +47,23 @@ public class PowerStoreDisAgent extends Agent {
         LOGGER.info(getLocalName() + " started with capacity of " + maxCapacity);
 
         Utils utils = new Utils();
-        utils.registerServices(this, "Power-Storage_Distribution");
 
-        addBehaviour(new InitPosition(this, 2000));
-        addBehaviour(new ReceiveMessage());
+        boolean isChargingStation = new Random().nextBoolean();
+
+        if (isChargingStation) {
+            String[] arguments = {"Power-Storage_Distribution","EV-Charging"};
+            utils.registerServices(this, arguments);
+        }
+        else {
+            utils.registerServices(this, "Power-Storage_Distribution");
+        }
+
+        InitPosition initPosition = new InitPosition(this, 2000);
+        ReceiveMessage receiveMessage = new ReceiveMessage();
+        behaviourList.add(initPosition);
+        behaviourList.add(receiveMessage);
+        addBehaviour(initPosition);
+        addBehaviour(receiveMessage);
     }
 
     @Override
@@ -55,12 +72,19 @@ public class PowerStoreDisAgent extends Agent {
         LOGGER.info(getLocalName() + " takedown. Killing...");
         try { DFService.deregister(this); }
         catch (Exception e) {}
+        if(!behaviourList.isEmpty()) {
+            for (Behaviour b: behaviourList){
+                LOGGER.info("Removing behaviour(s): "+b);
+                removeBehaviour(b);
+            }
+        }
         mapsInstance.removeUI(agentImageView);
         doDelete();
     }
 
     private void determineCapacity() {
         maxCapacity = new Random().ints(100000, 500000).findFirst().getAsInt();
+        powerInstance.addGridMax(maxCapacity);
     }
 
     private void initPosition() {
@@ -133,7 +157,7 @@ public class PowerStoreDisAgent extends Agent {
             ACLMessage msg = myAgent.receive();
 
             if (msg != null) {
-                String contents = msg.getContent();
+                String contents = "";
                 int performative = msg.getPerformative();
                 switch (performative) {
                     case 11:
@@ -155,6 +179,7 @@ public class PowerStoreDisAgent extends Agent {
                         break;
                     case 16:
                         contents = msg.getContent();
+                        ACLMessage reply = msg.createReply();
                         switch(contents) {
                             case "ADD":
                                 String key = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getKey();
@@ -171,7 +196,7 @@ public class PowerStoreDisAgent extends Agent {
                                 }
                                 break;
                             case "BEGIN_CONSUME":
-                                ACLMessage reply = msg.createReply();
+//                                reply = msg.createReply();
                                 double toConsume = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
                                 if (holdCapacity >= 0 && holdCapacity >= toConsume) {
                                     reply.setPerformative(ACLMessage.AGREE);
@@ -190,6 +215,32 @@ public class PowerStoreDisAgent extends Agent {
                                     + ". Current power levels:" + String.valueOf(holdCapacity));
                                     send(reply);
                                 } else if (holdCapacity <= 0 || holdCapacity < toConsume) {
+                                    reply.setPerformative(ACLMessage.AGREE);
+                                    reply.setContent("REJECT_CONSUME");
+                                    send(reply);
+                                }
+                                break;
+                            case "BEGIN_CHARGE":
+//                                reply = msg.createReply();
+                                LOGGER.debug(getLocalName()+" received charge request from: "+msg.getSender().getLocalName());
+                                double toCharge = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
+                                if (holdCapacity > 0 && holdCapacity >= toCharge) {
+                                    reply.setPerformative(ACLMessage.AGREE);
+                                    reply.setContent("ACCEPT_CHARGE");
+                                    holdCapacity = holdCapacity - toCharge;
+                                    powerInstance.subtractPowerLevel(toCharge);
+                                    if (currentColour == BLUE) {
+                                        try {
+                                            mapsInstance.changeColor(agentImageView, "GREEN");
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                        currentColour = GREEN;
+                                    }
+                                    LOGGER.info(myAgent.getLocalName() + " transferred " + toCharge + " to " + msg.getSender().getLocalName()
+                                            + ". Current power levels:" + String.valueOf(holdCapacity));
+                                    send(reply);
+                                } else if (holdCapacity <= 0 || holdCapacity < toCharge) {
                                     reply.setPerformative(ACLMessage.AGREE);
                                     reply.setContent("REJECT_CONSUME");
                                     send(reply);

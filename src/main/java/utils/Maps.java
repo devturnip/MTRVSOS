@@ -102,6 +102,9 @@ public class Maps {
                     case "BLUE":
                         color[0] = Color.BLUE;
                         break;
+                    case "LIGHTBLUE":
+                        color[0] = Color.LIGHTBLUE;
+                        break;
                     case "ORANGE":
                         color[0] = Color.ORANGE;
                         break;
