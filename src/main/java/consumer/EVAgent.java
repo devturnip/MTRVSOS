@@ -161,107 +161,15 @@ public class EVAgent extends Agent {
 
                     LOGGER.debug(getLocalName() + " NX:" + nowPoint.x + " NY:" + nowPoint.y + " MOVEDIST:" + moveDistance);
 
-//                    Point2D NUP = new Point2D(currentX-moveDistance,currentY);
-//                    Point2D NDOWN = new Point2D(currentX+moveDistance,currentY);
-//                    Point2D NLEFT = new Point2D(currentX,currentY-moveDistance);
-//                    Point2D NRIGHT = new Point2D(currentX,currentY+moveDistance);
-//
-//                    double distNUP = finalDestPoint.distance(NUP);
-//                    double distNDOWN = finalDestPoint.distance(NDOWN);
-//                    double distNLEFT = finalDestPoint.distance(NLEFT);
-//                    double distNRIGHT = finalDestPoint.distance(NRIGHT);
-//
-//                    ArrayList<Double> distances = new ArrayList<>();
-//                    distances.add(distNUP);
-//                    distances.add(distNDOWN);
-//                    distances.add(distNLEFT);
-//                    distances.add(distNRIGHT);
-//
-//                    //choose greatest reduction in distances moved
-//                    double maxMoved = Collections.min(distances);
-
                     if (percent >= 20 && stopCharging == false) {
                         breakLoop = moveCar(agent, currentX, currentY, toDeduct, nowPoint, finalDestPoint, false);
-//                        if (maxMoved == distNUP) {
-//                            isTravelling = true;
-//                            LOGGER.debug(getLocalName() + ":UP");
-//                            holdCapacity = holdCapacity-toDeduct;
-//                            Platform.runLater(new Runnable() {
-//                                @Override
-//                                public void run() {
-//                                    agentImageView.setX(NUP.x);
-//                                    agentImageView.setY(NUP.y);
-//                                }
-//                            });
-//                        }
-//                        else if (maxMoved == distNDOWN) {
-//                            isTravelling = true;
-//                            LOGGER.debug(getLocalName() + ":DOWN");
-//                            holdCapacity = holdCapacity-toDeduct;
-//                            Platform.runLater(new Runnable() {
-//                                @Override
-//                                public void run() {
-//                                    agentImageView.setX(NDOWN.x);
-//                                    agentImageView.setY(NDOWN.y);
-//                                }
-//                            });
-//
-//                        }
-//                        else if (maxMoved == distNLEFT) {
-//                            isTravelling = true;
-//                            LOGGER.debug(getLocalName() + ":LEFT");
-//                            holdCapacity = holdCapacity-toDeduct;
-//                            Platform.runLater(new Runnable() {
-//                                @Override
-//                                public void run() {
-//                                    agentImageView.setX(NLEFT.x);
-//                                    agentImageView.setY(NLEFT.y);
-//                                }
-//                            });
-//                        }
-//                        else if (maxMoved == distNRIGHT) {
-//                            isTravelling = true;
-//                            LOGGER.debug(getLocalName() + ":RIGHT");
-//                            holdCapacity = holdCapacity-toDeduct;
-//                            Platform.runLater(new Runnable() {
-//                                @Override
-//                                public void run() {
-//                                    agentImageView.setX(NRIGHT.x);
-//                                    agentImageView.setY(NRIGHT.y);
-//
-//                                }
-//                            });
-//
-//                        }
-//                        else {
-//                            //isTravelling = false;
-//                            LOGGER.debug("NOTMOVING");
-//                            break;
-//                        }
-//
-//                        if (nowPoint.distance(finalDestPoint) <= 0) {
-//                            isTravelling = false;
-//                            LOGGER.debug("BROKEN FROM TRAVEL");
-//                            break;
-//                        }
-//                        else if (nowPoint.distance(finalDestPoint) <= moveDistanceStatic && nowPoint.distance(finalDestPoint) > 5) {
-//                            moveDistance = 5;
-//                        }
-//                        else if (nowPoint.distance(finalDestPoint) <= 5 && nowPoint.distance(finalDestPoint) > 0) {
-//                            moveDistance = 1;
-//                        }
-//                        else {
-//                            moveDistance = moveDistanceStatic;
-//                        }
-//                        Thread.sleep(50);
+
                     } else {
                         //find nearest charging station
                         nearestNeighbour = utility.getNearest(agent, currentX, currentY, "EV-Charging");
                         HashMap<String, Point2D> agentPoints = mapsInstance.getAgentsMappedPoint2D();
                         Point2D nearestCharger = agentPoints.get(nearestNeighbour.getKey().getLocalName());
                         stopCharging = moveCar(agent, currentX, currentY, toDeduct, nowPoint, nearestCharger, true);
-
-
 
                     }
 
@@ -404,10 +312,6 @@ public class EVAgent extends Agent {
         Thread.sleep(50);
 
         return breakLoop;
-    }
-
-    private void chargeCar() {
-
     }
 
     private class MoveCar extends WakerBehaviour {

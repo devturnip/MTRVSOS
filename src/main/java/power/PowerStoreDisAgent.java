@@ -70,6 +70,7 @@ public class PowerStoreDisAgent extends Agent {
 
     private void determineCapacity() {
         maxCapacity = new Random().ints(100000, 500000).findFirst().getAsInt();
+        powerInstance.addGridMax(maxCapacity);
     }
 
     private void initPosition() {

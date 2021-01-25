@@ -15,18 +15,24 @@ import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import power.Power;
 import utils.Maps;
 import utils.Utils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -56,11 +62,13 @@ public class HelloFX extends Application {
     private ContainerController smartHomeAgentContainerController;
     private ContainerController sosAgentContainerController;
     private ContainerController evAgentContainerController;
+    private double totalPowerLevels = 0;
     //private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
 
     private BlockingQueue<String> agentsQueue = new LinkedBlockingQueue<>();
     private Utils utility = new Utils();
     private Maps mapsInstance = Maps.getMapsInstance();
+    private Power powerInstance = Power.getPowerInstance();
 
     //logs
     private static Logger LOGGER = LoggerFactory.getLogger(HelloFX.class);
@@ -70,17 +78,65 @@ public class HelloFX extends Application {
         Group root = new Group();
         Canvas canvas = new Canvas(canvas_x, canvas_y);
 
-        ProgressBar progressBar = new ProgressBar();
-        Group progressHolder = new Group(progressBar);
-        progressBar.setPrefSize(15,400);
-        progressBar.getTransforms().setAll(new Translate(0, 400), new Rotate(-90, 0,0));
+        Label progressvalues = new Label();
+        progressvalues.setTextFill(Color.web("#8A2BE2"));
+        final Task updatePowerLevels = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                while (true) {
+                    totalPowerLevels = powerInstance.getGridMax();
+                    if (totalPowerLevels!=0) {
+                        LOGGER.debug("broken from loop for gridmax");
+                        break;
+                    }
+                    Thread.sleep(1000);
+                }
+                for (int i=0; i<totalPowerLevels; i++) {
+                    Platform.runLater(new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            double currentActualPower = powerInstance.showPowerLevels();
+                            double holder = (currentActualPower/totalPowerLevels)*100;
+                            BigDecimal bd = new BigDecimal(holder).setScale(2, RoundingMode.HALF_UP);
+                            BigDecimal current = new BigDecimal(currentActualPower).setScale(2, RoundingMode.HALF_UP);
+                            BigDecimal max = new BigDecimal(totalPowerLevels).setScale(2, RoundingMode.HALF_UP);
+                            double percentage = bd.doubleValue();
+                            double currentPower = current.doubleValue();
+                            double maxPower = max.doubleValue();
+                            progressvalues.setText(current + " / "+maxPower+" ("+percentage+") %");
+                        }
+                    }));
+                    updateProgress(i + powerInstance.showPowerLevels(), totalPowerLevels);
+                    Thread.sleep(500);
+                }
+                return null;
+            }
+        };
+
+        final ProgressBar progressBar = new ProgressBar();
+        progressBar.setPrefSize(600,15);
+        Label label = new Label();
+        label.setGraphic(progressBar);
+        label.setText("Power Levels");
+        label.setContentDisplay(ContentDisplay.LEFT);
+        progressBar.progressProperty().bind(updatePowerLevels.progressProperty());
+
+        progressBar.progressProperty().addListener(observable -> {
+            if (totalPowerLevels > 0) {
+                if (progressBar.getProgress() >= totalPowerLevels) {
+                    progressBar.setStyle("-fx-accent: forestgreen;");
+                } else if (progressBar.getProgress() <= totalPowerLevels) {
+                    progressBar.setStyle("-fx-accent: lightskyblue;");
+                }
+            }
+        });
 
         HBox hbox = new HBox();
         hbox.setPadding(new Insets(15,12,15,12));
         hbox.setSpacing(10);
         hbox.setStyle("-fx-background-color: #B0C4DE;");
         hbox.setAlignment(Pos.BASELINE_CENTER);
-        hbox.getChildren().addAll(progressHolder);
+        hbox.getChildren().addAll(label, progressvalues);
 
         BorderPane border = new BorderPane();
         border.setCenter(canvas);
@@ -181,6 +237,10 @@ public class HelloFX extends Application {
         mapsInstance.setGroup(root);
         stage.setScene(new Scene(root));
         stage.show();
+
+        final Thread updateProgressBar = new Thread (updatePowerLevels, "updateProgressBar");
+        updateProgressBar.setDaemon(true);
+        updateProgressBar.start();
     }
 
     @Override

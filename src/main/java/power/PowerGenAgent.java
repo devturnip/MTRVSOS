@@ -82,6 +82,7 @@ public class PowerGenAgent extends Agent {
     private void determineCapacity() {
         //similarly, capacity needs to be sampled from an actual distribution of capacities.
         maxCapacity = new Random().ints(500000, 1000000).findFirst().getAsInt();
+        powerInstance.addGridMax(maxCapacity);
     }
 
     private void initPosition() {
