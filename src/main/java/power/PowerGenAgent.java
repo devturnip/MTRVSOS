@@ -56,6 +56,7 @@ public class PowerGenAgent extends Agent {
     protected void takeDown() {
         super.takeDown();
         LOGGER.info(getLocalName() + " takedown. Killing...");
+        powerInstance.subtractGridMax(maxCapacity);
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {
@@ -66,7 +67,6 @@ public class PowerGenAgent extends Agent {
         }
         mapsInstance.removeUI(agentImageView);
         doDelete();
-
     }
 
     protected void setup() {

@@ -131,6 +131,7 @@ public class SmartHomeAgent extends Agent {
         protected void onTick() {
             HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toConsume", String.valueOf(totalAppliancePowerConsumption));
             String[] servicesArgs = new String[] {"Power-Storage_Distribution", "Power-Generation"};
+            currentNeighbour = utility.getNearest(this.myAgent, agent_X, agent_Y, servicesArgs).getKey();
             if (hasInit == true) {
                 if (acceptSent) {
                     utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");

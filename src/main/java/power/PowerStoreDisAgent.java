@@ -70,6 +70,7 @@ public class PowerStoreDisAgent extends Agent {
     protected void takeDown() {
         super.takeDown();
         LOGGER.info(getLocalName() + " takedown. Killing...");
+        powerInstance.subtractGridMax(maxCapacity);
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {
