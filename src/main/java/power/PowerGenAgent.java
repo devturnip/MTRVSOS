@@ -285,7 +285,7 @@ public class PowerGenAgent extends Agent {
                     case "BEGIN_CONSUME":
                         ACLMessage reply = msg.createReply();
                         double toConsume = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
-                        if (holdCapacity >= 0 && holdCapacity >= toConsume) {
+                        if (holdCapacity > 0 && holdCapacity >= toConsume) {
                             reply.setPerformative(ACLMessage.AGREE);
                             reply.setContent("ACCEPT_CONSUME");
                             holdCapacity = holdCapacity - toConsume;
@@ -307,6 +307,9 @@ public class PowerGenAgent extends Agent {
                             reply.setContent("REJECT_CONSUME");
                             send(reply);
                         }
+                        break;
+                    case "KILL":
+                        takeDown();
                         break;
                 }
             }
