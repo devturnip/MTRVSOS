@@ -1,5 +1,6 @@
 package power;
 
+import com.opencsv.exceptions.CsvValidationException;
 import com.sun.javafx.geom.Rectangle;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -87,11 +89,6 @@ public class PowerStoreDisAgent extends Agent {
     private void determineCapacity() {
         maxCapacity = new Random().ints(100000, 500000).findFirst().getAsInt();
         powerInstance.addGridMax(maxCapacity);
-        try {
-            utils.getPowerCapacity();
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage());
-        }
     }
 
     private void initPosition() {

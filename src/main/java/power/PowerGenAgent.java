@@ -1,5 +1,6 @@
 package power;
 
+import com.opencsv.exceptions.CsvValidationException;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.*;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
+import java.io.IOException;
 import java.util.*;
 
 public class PowerGenAgent extends Agent {
@@ -23,7 +25,8 @@ public class PowerGenAgent extends Agent {
     private double maxCapacity = 0;
     private double holdCapacity = 0;
     //toAdd needs to be sampled from a probability distribution of actual power grid rates.
-    private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
+    //private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
+    private int toAdd = 0;
     private int rateSecs = 200;
     private double agent_X = 0;
     private double agent_Y = 0;
@@ -93,6 +96,12 @@ public class PowerGenAgent extends Agent {
         //similarly, capacity needs to be sampled from an actual distribution of capacities.
         maxCapacity = new Random().ints(500000, 1000000).findFirst().getAsInt();
         powerInstance.addGridMax(maxCapacity);
+        try {
+            toAdd = (int) utility.getPowerGenRate()*1000; //original vals are in mwh, convert to kwh;
+            LOGGER.debug("Randomised: " + String.valueOf(toAdd));
+        } catch (IOException | CsvValidationException e) {
+            e.printStackTrace();
+        }
     }
 
     private void initPosition() {
