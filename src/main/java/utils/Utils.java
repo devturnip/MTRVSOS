@@ -1,5 +1,7 @@
 package utils;
 
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
@@ -12,8 +14,10 @@ import javafx.geometry.Point2D;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import power.PowerGenAgent;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 public class Utils {
@@ -287,5 +291,15 @@ public class Utils {
                 break;
         }
 
+    }
+
+    public double getPowerCapacity() throws IOException, CsvValidationException {
+        File file = new File(getClass().getClassLoader().getResource("net_generation_final.csv").getFile());
+        CSVReader csvReader = new CSVReader(new FileReader(file));
+        String[] nextLine;
+        while((nextLine= csvReader.readNext())!=null) {
+            LOGGER.info("CSV: "+nextLine.toString());
+        }
+        return 0;
     }
 }

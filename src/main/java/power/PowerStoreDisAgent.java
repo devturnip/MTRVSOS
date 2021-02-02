@@ -28,6 +28,7 @@ public class PowerStoreDisAgent extends Agent {
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Power powerInstance = Power.getPowerInstance();
+    private Utils utils = new Utils();
 
     //message sending flags
     private int countCFP = 0;
@@ -86,6 +87,11 @@ public class PowerStoreDisAgent extends Agent {
     private void determineCapacity() {
         maxCapacity = new Random().ints(100000, 500000).findFirst().getAsInt();
         powerInstance.addGridMax(maxCapacity);
+        try {
+            utils.getPowerCapacity();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+        }
     }
 
     private void initPosition() {
