@@ -6,16 +6,19 @@ import jade.core.Agent;
 import jade.core.behaviours.*;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
+import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.Maps;
+import utils.Settings;
 import utils.Utils;
 
 import java.io.IOException;
 import java.util.*;
 
 public class PowerGenAgent extends Agent {
+    Settings settingsInstance = Settings.getSettingsInstance();
     private boolean done = false;
     private ACLMessage pmsg = null;
     private ACLMessage smsg = null;
@@ -27,10 +30,11 @@ public class PowerGenAgent extends Agent {
     //toAdd needs to be sampled from a probability distribution of actual power grid rates.
     //private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
     private int toAdd = 0;
-    private int rateSecs = 1000;
+    private int rateSecs = settingsInstance.getRateSecsPowerGen();
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
+    private Label agentLabel;
 
     private Utils utility = new Utils();
     private Power powerInstance = Power.getPowerInstance();
@@ -69,6 +73,7 @@ public class PowerGenAgent extends Agent {
             }
         }
         mapsInstance.removeUI(agentImageView);
+        mapsInstance.removeUI(agentLabel);
         doDelete();
     }
 
@@ -115,6 +120,9 @@ public class PowerGenAgent extends Agent {
         agent_Y = iv.getY();
         LOGGER.debug("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
 
+        HashMap<String, Label> lm = mapsInstance.getAgentLabelMap(this.getLocalName());
+        Map.Entry<String, Label> labelEntry = lm.entrySet().iterator().next();
+        agentLabel = labelEntry.getValue();
     }
 
     private class GeneratePower extends OneShotBehaviour {

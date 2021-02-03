@@ -8,24 +8,28 @@ import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
+import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.Maps;
+import utils.Settings;
 import utils.Utils;
 
 import java.util.*;
 
 public class SmartHomeAgent extends Agent {
+    Settings settingsInstance = Settings.getSettingsInstance();
     private HashMap<String, Double> appliancesList = new HashMap<>();
     private double totalAppliancePowerConsumption = 0;
-    private int rateSecs = 1000;
+    private int rateSecs = settingsInstance.getRateSecsSmartHome();
     private boolean hasInit = false;
 
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
-    private int houseUnit = 100; //represents number of houses per agent
+    private Label agentLabel;
+    private int houseUnit = settingsInstance.getHouseUnit(); //represents number of houses per agent
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
@@ -77,6 +81,7 @@ public class SmartHomeAgent extends Agent {
             }
         }
         mapsInstance.removeUI(agentImageView);
+        mapsInstance.removeUI(agentLabel);
         doDelete();
     }
 
@@ -101,6 +106,10 @@ public class SmartHomeAgent extends Agent {
         agent_X = iv.getX();
         agent_Y = iv.getY();
         LOGGER.debug("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
+
+        HashMap<String, Label> lm = mapsInstance.getAgentLabelMap(this.getLocalName());
+        Map.Entry<String, Label> labelEntry = lm.entrySet().iterator().next();
+        agentLabel = labelEntry.getValue();
     }
 
     private class InitPosition extends WakerBehaviour {
@@ -159,7 +168,6 @@ public class SmartHomeAgent extends Agent {
     }
 
     private class ReceiveMessage extends CyclicBehaviour {
-
         @Override
         public void action() {
             ACLMessage msg = myAgent.receive();
