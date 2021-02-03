@@ -3,6 +3,7 @@ package utils;
 import com.sun.javafx.geom.Point2D;
 import javafx.application.Platform;
 import javafx.scene.Group;
+import javafx.scene.control.Label;
 import javafx.scene.effect.Light;
 import javafx.scene.effect.Lighting;
 import javafx.scene.image.ImageView;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 public class Maps {
     private static Maps mapInstance = new Maps();
     private HashMap<String, ImageView> agentMap = new HashMap<>();
+    private HashMap<String, Label>  agentLabelMap = new HashMap<>();
     private HashMap<String, Point2D> agentMapPoint2D = new HashMap<>();
     private Group group = null;
     private static Logger LOGGER = LoggerFactory.getLogger(Maps.class);
@@ -53,6 +55,10 @@ public class Maps {
         agentMap.put(agentName, ig);
     }
 
+    public void mapAgentLabel (String agentName, Label label){
+        agentLabelMap.put(agentName, label);
+    }
+
     public HashMap<String, ImageView> getAgentsMappedLocation() {
         return agentMap;
     }
@@ -82,6 +88,17 @@ public class Maps {
                 }
             }
         }
+        return retSubMap;
+    }
+
+    public HashMap<String, Label> getAgentLabelMap(String agentName) {
+        HashMap<String, Label> retSubMap = new HashMap<>();
+        HashMap<String, Label> agentLabelMap = this.agentLabelMap;
+        for (String key : agentLabelMap.keySet()) {
+                if (key.equals(agentName)) {
+                    retSubMap.put(key, agentLabelMap.get(key));
+                }
+            }
         return retSubMap;
     }
 

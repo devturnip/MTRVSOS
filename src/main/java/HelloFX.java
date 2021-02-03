@@ -23,6 +23,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -230,6 +231,16 @@ public class HelloFX extends Application {
                         //collision prevention
                         int x0 = new Random().ints(imageHeightXY*multiplier, ((int)canvas_x-(imageHeightXY*multiplier))).findFirst().getAsInt();
                         int y0 = new Random().ints(imageHeightXY*multiplier, ((int)canvas_y-(imageHeightXY*multiplier))).findFirst().getAsInt();
+
+                        if (agentName.contains("SmartHomeAgent")) {
+                            x0 = new Random().ints(homeImageXY*multiplier, ((int)canvas_x-(homeImageXY*multiplier))).findFirst().getAsInt();
+                            y0 = new Random().ints(homeImageXY*multiplier, ((int)canvas_y-(homeImageXY*multiplier))).findFirst().getAsInt();
+                        }
+                        else if (agentName.contains("EVAgent")){
+                            x0 = new Random().ints(evImageXY*multiplier, ((int)canvas_x-(evImageXY*multiplier))).findFirst().getAsInt();
+                            y0 = new Random().ints(evImageXY*2*multiplier, ((int)canvas_y-(evImageXY*2*multiplier))).findFirst().getAsInt();
+                        }
+
                         Point2D point2D2Compare = new Point2D(x0,y0);
                         if(!points.contains(point2D2Compare)) {
                             x = (int) point2D2Compare.x;
@@ -237,6 +248,13 @@ public class HelloFX extends Application {
                             boolean toBreak = false;
                             ArrayList<Rectangle2D> intersect = new ArrayList<>();
                             Rectangle2D rectangle2DToCompare = new Rectangle2D(x, y, imageHeightXY*multiplier, imageHeightXY*multiplier);
+
+                            if(agentName.contains("SmartHomeAgent")) {
+                                rectangle2DToCompare = new Rectangle2D(x,y, homeImageXY*multiplier, homeImageXY*multiplier);
+                            }
+                            else if (agentName.contains("EVAgent")) {
+                                rectangle2DToCompare = new Rectangle2D(x,y, evImageXY*multiplier, evImageXY*1.75*multiplier);
+                            }
                             for (Rectangle2D rect:pointsBox) {
                                 if (rect.intersects(rectangle2DToCompare)){
                                     //add intersecting points; we don't really need this,
@@ -402,6 +420,9 @@ public class HelloFX extends Application {
     }
 
     private void renderImage(Group g, double x, double y, String agentName) {
+        Label label = new Label(agentName);
+        label.setMinSize(0.5,0.5);
+        label.setFont(new Font(10));
         Image ig = new Image(getClass().getResource("gen.png").toExternalForm());
         Image ig1 = new Image(getClass().getResource("power_storage.png").toExternalForm());
         Image ig2 = new Image(getClass().getResource("smart_home.png").toExternalForm());
@@ -411,14 +432,20 @@ public class HelloFX extends Application {
             iv = new ImageView(ig);
             iv.setFitHeight(imageHeightXY*multiplier);
             iv.setFitWidth(imageHeightXY*multiplier);
+            label.setTranslateX(x-((imageHeightXY*multiplier)/3));
+            label.setTranslateY(y+(imageHeightXY*multiplier));
         } else if (agentName.contains("PowerStoreDisAgent")) {
             iv = new ImageView(ig1);
             iv.setFitHeight(imageHeightXY*multiplier);
             iv.setFitWidth(imageHeightXY*multiplier);
+            label.setTranslateX(x-((imageHeightXY*multiplier)/2));
+            label.setTranslateY(y+(imageHeightXY*multiplier));
         } else if (agentName.contains("SmartHomeAgent")) {
             iv = new ImageView(ig2);
             iv.setFitHeight(homeImageXY*multiplier);
             iv.setFitWidth(homeImageXY*multiplier);
+            label.setTranslateX(x-((homeImageXY*multiplier)/2));
+            label.setTranslateY(y+(homeImageXY*multiplier));
         } else if (agentName.contains("EVAgent")) {
             iv = new ImageView(ig3);
             iv.setFitHeight(evImageXY*multiplier);
@@ -430,7 +457,8 @@ public class HelloFX extends Application {
         mapsInstance.mapAgentLocation(agentName, point2D);
         //powAgentMap.put(agentName, iv);
         mapsInstance.mapAgentLocation(agentName, iv);
-        g.getChildren().addAll(iv);
+        mapsInstance.mapAgentLabel(agentName, label);
+        g.getChildren().addAll(iv, label);
     }
 
 

@@ -6,6 +6,7 @@ import jade.core.Agent;
 import jade.core.behaviours.*;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
+import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ public class PowerGenAgent extends Agent {
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
+    private Label agentLabel;
 
     private Utils utility = new Utils();
     private Power powerInstance = Power.getPowerInstance();
@@ -71,6 +73,7 @@ public class PowerGenAgent extends Agent {
             }
         }
         mapsInstance.removeUI(agentImageView);
+        mapsInstance.removeUI(agentLabel);
         doDelete();
     }
 
@@ -117,6 +120,9 @@ public class PowerGenAgent extends Agent {
         agent_Y = iv.getY();
         LOGGER.debug("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
 
+        HashMap<String, Label> lm = mapsInstance.getAgentLabelMap(this.getLocalName());
+        Map.Entry<String, Label> labelEntry = lm.entrySet().iterator().next();
+        agentLabel = labelEntry.getValue();
     }
 
     private class GeneratePower extends OneShotBehaviour {
