@@ -1,5 +1,6 @@
 package power;
 
+import com.opencsv.exceptions.CsvValidationException;
 import com.sun.javafx.geom.Rectangle;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -28,6 +30,7 @@ public class PowerStoreDisAgent extends Agent {
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Power powerInstance = Power.getPowerInstance();
+    private Utils utils = new Utils();
 
     //message sending flags
     private int countCFP = 0;
@@ -70,6 +73,7 @@ public class PowerStoreDisAgent extends Agent {
     protected void takeDown() {
         super.takeDown();
         LOGGER.info(getLocalName() + " takedown. Killing...");
+        powerInstance.subtractGridMax(maxCapacity);
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {

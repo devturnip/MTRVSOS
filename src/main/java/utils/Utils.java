@@ -1,5 +1,6 @@
 package utils;
-
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
@@ -12,13 +13,18 @@ import javafx.geometry.Point2D;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import power.PowerGenAgent;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 
 public class Utils {
     //logs
     private static Logger LOGGER = LoggerFactory.getLogger(Utils.class);
+    private InputStream inputStream = null;
+    private ArrayList<Double> powerGenCapacityValues = new ArrayList<>();
+    private ArrayList<Double> powerStorageCapacityValues = new ArrayList<>();
 
     public Utils() {
     }
@@ -286,6 +292,56 @@ public class Utils {
                 LOGGER.warn("See jade documentation on ACLMessage FIPA Performative types.");
                 break;
         }
+    }
 
+    public double getPowerGenRate() throws IOException, CsvValidationException {
+        if (powerGenCapacityValues.size() == 0) {
+            inputStream = this.getClass().getClassLoader().getResourceAsStream("data/netgen_10k.csv");
+            if (inputStream == null) {
+                LOGGER.error("Resource does not exist");
+            }
+            else {
+                CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream));
+                csvReader.skip(1);
+                String[] nextLine;
+                while ((nextLine = csvReader.readNext()) != null) {
+                    if (nextLine != null) {
+                        //ignore header
+                        //LOGGER.debug(Arrays.toString(nextLine));
+                        powerGenCapacityValues.add(Double.parseDouble(nextLine[1]));
+                        powerGenCapacityValues.add(Double.parseDouble(nextLine[2]));
+                        powerGenCapacityValues.add(Double.parseDouble(nextLine[3]));
+                    }
+                }
+            }
+        }
+        double returnValue = powerGenCapacityValues.get(new Random().nextInt(new Random().ints(1, powerGenCapacityValues.size()).findFirst().getAsInt()));
+        returnValue = (returnValue/30)/24; //divide by 30 days, divide by 24 hours to return net generation in mwh
+        return returnValue;
+
+    }
+
+    public double getStorageCapacity() throws IOException, CsvValidationException {
+        if (powerStorageCapacityValues.size() == 0){
+            inputStream = this.getClass().getClassLoader().getResourceAsStream("data/storage_capacity.csv");
+            if (inputStream == null) {
+                LOGGER.error("Resource does not exist");
+            }
+            else {
+                CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream));
+                csvReader.skip(1);
+                String[] nextLine;
+                while ((nextLine = csvReader.readNext()) != null) {
+                    if (nextLine != null) {
+                        //ignore header
+                        //LOGGER.debug(nextLine[3]);
+                        powerStorageCapacityValues.add(Double.parseDouble(nextLine[3]));
+                    }
+                }
+            }
+        }
+        double returnValue = powerStorageCapacityValues.get(new Random().nextInt(new Random().ints(1,powerStorageCapacityValues.size()).findFirst().getAsInt()));
+        returnValue = returnValue*1000; //return in kwh
+        return returnValue;
     }
 }

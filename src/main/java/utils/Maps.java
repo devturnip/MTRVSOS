@@ -7,14 +7,19 @@ import javafx.scene.effect.Light;
 import javafx.scene.effect.Lighting;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Maps {
     private static Maps mapInstance = new Maps();
-    private HashMap<String, ImageView> agentMap = new HashMap<String, ImageView>();
-    private HashMap<String, Point2D> agentMapPoint2D = new HashMap<String, Point2D>();
+    private HashMap<String, ImageView> agentMap = new HashMap<>();
+    private HashMap<String, Point2D> agentMapPoint2D = new HashMap<>();
     private Group group = null;
+    private static Logger LOGGER = LoggerFactory.getLogger(Maps.class);
 
     private Maps(){}
 

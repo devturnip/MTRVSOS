@@ -1,4 +1,5 @@
 import com.sun.javafx.geom.Point2D;
+import com.sun.javafx.geom.Rectangle;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
@@ -10,6 +11,7 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -45,10 +47,10 @@ public class HelloFX extends Application {
     private int evImageXY = 15;
     private double canvas_x = 1024;
     private double canvas_y = 768;
-    private int numPowerAgents = 3;
+    private int numPowerAgents = 1;
     private int numPowerDisAgents = 5;
     private int numSmartHomeAgents = 10;
-    private int numEVAgents = 3;
+    private int numEVAgents = 5;
 
     //VARS
     private String SoSAgentContainerName = "SoSAgentContainer";
@@ -194,10 +196,14 @@ public class HelloFX extends Application {
                 HashMap<String, Point2D> allAgentsMap = mapsInstance.getAgentsMappedPoint2D();
                 Iterator locationMap = allAgentsMap.entrySet().iterator();
                 ArrayList<Point2D> points = new ArrayList<>();
+                ArrayList<Rectangle2D> pointsBox = new ArrayList<>();
 
                 while (locationMap.hasNext()) {
                     Map.Entry<String, Point2D> m = (Map.Entry<String, Point2D>) locationMap.next();
-                    points.add(m.getValue());
+                    Point2D point2DVals = m.getValue();
+                    points.add(point2DVals);
+                    Rectangle2D rectanglePoints = new Rectangle2D(point2DVals.x, point2DVals.y, imageHeightXY*multiplier, imageHeightXY*multiplier);
+                    pointsBox.add(rectanglePoints);
                 }
 
                 while ((agentName = agentsQueue.take())!=null && !agentName.equals("")) {
@@ -212,7 +218,20 @@ public class HelloFX extends Application {
                         if(!points.contains(point2D2Compare)) {
                             x = (int) point2D2Compare.x;
                             y = (int) point2D2Compare.y;
-                            break;
+                            boolean toBreak = false;
+                            ArrayList<Rectangle2D> intersect = new ArrayList<>();
+                            Rectangle2D rectangle2DToCompare = new Rectangle2D(x, y, imageHeightXY*multiplier, imageHeightXY*multiplier);
+                            for (Rectangle2D rect:pointsBox) {
+                                if (rect.intersects(rectangle2DToCompare)){
+                                    //add intersecting points; we don't really need this,
+                                    //we break the loop only when intersect is empty
+                                    //thus avoiding collision (as much as possible) when spawning agents.
+                                    intersect.add(rectangle2DToCompare);
+                                }
+                            }
+                            if(intersect.isEmpty()) {
+                                break;
+                            }
                         }
                     }
 

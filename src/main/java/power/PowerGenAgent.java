@@ -1,5 +1,6 @@
 package power;
 
+import com.opencsv.exceptions.CsvValidationException;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.*;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import utils.Maps;
 import utils.Utils;
 
+import java.io.IOException;
 import java.util.*;
 
 public class PowerGenAgent extends Agent {
@@ -23,8 +25,9 @@ public class PowerGenAgent extends Agent {
     private double maxCapacity = 0;
     private double holdCapacity = 0;
     //toAdd needs to be sampled from a probability distribution of actual power grid rates.
-    private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
-    private int rateSecs = 200;
+    //private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
+    private int toAdd = 0;
+    private int rateSecs = 1000;
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
@@ -56,6 +59,7 @@ public class PowerGenAgent extends Agent {
     protected void takeDown() {
         super.takeDown();
         LOGGER.info(getLocalName() + " takedown. Killing...");
+        powerInstance.subtractGridMax(maxCapacity);
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {
@@ -66,7 +70,6 @@ public class PowerGenAgent extends Agent {
         }
         mapsInstance.removeUI(agentImageView);
         doDelete();
-
     }
 
     protected void setup() {
@@ -90,9 +93,16 @@ public class PowerGenAgent extends Agent {
     }
 
     private void determineCapacity() {
-        //similarly, capacity needs to be sampled from an actual distribution of capacities.
-        maxCapacity = new Random().ints(500000, 1000000).findFirst().getAsInt();
-        powerInstance.addGridMax(maxCapacity);
+        //sample storage capacity and generation from actual US energy data.
+        //maxCapacity = new Random().ints(500000, 1000000).findFirst().getAsInt();
+        try {
+            maxCapacity = utility.getStorageCapacity();
+            powerInstance.addGridMax(maxCapacity);
+            toAdd = (int) utility.getPowerGenRate()*1000; //original vals are in mwh, convert to kwh;
+            LOGGER.debug("Randomised: " + String.valueOf(toAdd));
+        } catch (IOException | CsvValidationException e) {
+            e.printStackTrace();
+        }
     }
 
     private void initPosition() {
@@ -285,7 +295,7 @@ public class PowerGenAgent extends Agent {
                     case "BEGIN_CONSUME":
                         ACLMessage reply = msg.createReply();
                         double toConsume = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
-                        if (holdCapacity >= 0 && holdCapacity >= toConsume) {
+                        if (holdCapacity > 0 && holdCapacity >= toConsume) {
                             reply.setPerformative(ACLMessage.AGREE);
                             reply.setContent("ACCEPT_CONSUME");
                             holdCapacity = holdCapacity - toConsume;
@@ -307,6 +317,9 @@ public class PowerGenAgent extends Agent {
                             reply.setContent("REJECT_CONSUME");
                             send(reply);
                         }
+                        break;
+                    case "KILL":
+                        takeDown();
                         break;
                 }
             }

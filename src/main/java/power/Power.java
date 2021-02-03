@@ -39,6 +39,10 @@ public class Power {
         gridMax = gridMax + maxCapacity;
     }
 
+    public void subtractGridMax(double maxCapacity) {
+        gridMax = gridMax - maxCapacity;
+    }
+
     public double getGridMax() {
         return gridMax;
     }

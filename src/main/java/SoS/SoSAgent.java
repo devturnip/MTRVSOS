@@ -2,6 +2,7 @@ package SoS;
 
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.lang.acl.ACLMessage;
 import org.slf4j.Logger;
@@ -42,6 +43,14 @@ public class SoSAgent extends Agent {
                     LOGGER.info(this.myAgent.getName()+ " sent (" + message + ") to " + agents[i].getName());
                 }
             }
+        }
+    }
+
+    private class KillPowerGenAgent extends OneShotBehaviour {
+
+        @Override
+        public void action() {
+
         }
     }
 }

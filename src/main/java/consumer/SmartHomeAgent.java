@@ -25,6 +25,7 @@ public class SmartHomeAgent extends Agent {
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
+    private int houseUnit = 100; //represents number of houses per agent
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
@@ -35,14 +36,11 @@ public class SmartHomeAgent extends Agent {
 
     //message sending flags
     private AID currentNeighbour;
-    private AID nextNeighbour;
-    private long retryTime = 2000;
+    private int retryCount = 0;
     private boolean messageSent = false;
-    private boolean acceptSent = true;
 
     //colour flags
     private int currentColour = 0;
-    private int GREEN = 1;
     private int ORANGE = 3;
     private int YELLOWGREEN = 4;
 
@@ -56,14 +54,14 @@ public class SmartHomeAgent extends Agent {
         LOGGER.info(getLocalName()+ "'s total appliances power consumption: "+ totalAppliancePowerConsumption);
 
         InitPosition initPosition = new InitPosition(this, 2000);
-        ReceiveMessage2 receiveMessage2 = new ReceiveMessage2();
-        ConsumeElectricity2 consumeElectricity2 = new ConsumeElectricity2(this, rateSecs);
+        ReceiveMessage receiveMessage = new ReceiveMessage();
+        ConsumeElectricity consumeElectricity = new ConsumeElectricity(this, rateSecs);
         behaviourList.add(initPosition);
-        behaviourList.add(receiveMessage2);
-        behaviourList.add(consumeElectricity2);
+        behaviourList.add(receiveMessage);
+        behaviourList.add(consumeElectricity);
         addBehaviour(initPosition);
-        addBehaviour(receiveMessage2);
-        addBehaviour(consumeElectricity2);
+        addBehaviour(receiveMessage);
+        addBehaviour(consumeElectricity);
     }
 
     @Override
@@ -91,6 +89,7 @@ public class SmartHomeAgent extends Agent {
             //System.out.println(pair.getKey() + " = " + pair.getValue());
             totalAppliancePowerConsumption = totalAppliancePowerConsumption + (Double)pair.getValue();
         }
+        totalAppliancePowerConsumption = totalAppliancePowerConsumption * houseUnit;
     }
 
     private void initPosition() {
@@ -121,50 +120,46 @@ public class SmartHomeAgent extends Agent {
             hasInit = true;
         }
     }
-    private class ConsumeElectricity2 extends TickerBehaviour {
 
-        public ConsumeElectricity2(Agent a, long period) {
+    private class ConsumeElectricity extends TickerBehaviour {
+
+        public ConsumeElectricity(Agent a, long period) {
             super(a, period);
         }
 
         @Override
         protected void onTick() {
             HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toConsume", String.valueOf(totalAppliancePowerConsumption));
-            String[] servicesArgs = new String[] {"Power-Storage_Distribution", "Power-Generation"};
-            if (hasInit == true) {
-                if (acceptSent) {
+            if(hasInit== true) {
+                if (messageSent == false) {
                     utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
-                } else {
-                    Iterator consumptionEngine = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator();
-                    int count =0;
-                    while (consumptionEngine.hasNext()) {
-                        count+=1;
-                        AID temp = (AID) consumptionEngine.next();
-                        LOGGER.debug("Loop:"+count+" temp:" + temp.getLocalName() + " current:" + currentNeighbour.getLocalName());
-                        if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && consumptionEngine.hasNext()) { //if first item equals to current neighbour
-                            nextNeighbour = (AID)consumptionEngine.next();
-                            //send to next neighbour in list.
-                            utility.sendMessageWithArgs(myAgent, nextNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
-                            //current neighbour is next neighbour.
-                            currentNeighbour = nextNeighbour;
-                            LOGGER.debug("Break from loop:"+count);
-                            break;
+                    messageSent = true;
+                } else if (messageSent){
+                    retryCount = retryCount + 1;
+                    LOGGER.debug("BLOCK");
+                    if (retryCount == 5) {
+                        //if blocked more than 5 times, recheck for nearest power source again.
+                        if (currentColour != ORANGE) {
+                            try {
+                                mapsInstance.changeColor(agentImageView, "ORANGE");
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            currentColour = ORANGE;
                         }
-                        else if (!consumptionEngine.hasNext()) { //if last item in list
-                            //reset current neighbour to first item in list
-                            currentNeighbour = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator().next();
-                            utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
-                            LOGGER.debug("Break from loop:"+count);
-                            acceptSent = true;
-                            break;
-                        }
+                        retryCount = 0;
+                        String[] servicesArgs = new String[] {"Power-Storage_Distribution", "Power-Generation"};
+                        currentNeighbour = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator().next();
+                        messageSent = false;
                     }
+                    block();
                 }
             }
         }
     }
 
-    private class ReceiveMessage2 extends CyclicBehaviour {
+    private class ReceiveMessage extends CyclicBehaviour {
+
         @Override
         public void action() {
             ACLMessage msg = myAgent.receive();
@@ -172,8 +167,7 @@ public class SmartHomeAgent extends Agent {
                 String content = msg.getContent();
                 switch (content) {
                     case "ACCEPT_CONSUME":
-//                        System.out.println("TRUE");
-                        acceptSent = true;
+                        messageSent = false;
                         if (currentColour != YELLOWGREEN) {
                             try {
                                 mapsInstance.changeColor(agentImageView, "YELLOWGREEN");
@@ -184,8 +178,8 @@ public class SmartHomeAgent extends Agent {
                         }
                         break;
                     case "REJECT_CONSUME":
-//                        System.out.println("FALSE");
-                        acceptSent = false;
+                        messageSent = false;
+                        //change status to orange
                         if (currentColour != ORANGE) {
                             try {
                                 mapsInstance.changeColor(agentImageView, "ORANGE");
@@ -194,9 +188,25 @@ public class SmartHomeAgent extends Agent {
                             }
                             currentColour = ORANGE;
                         }
+                        //get next neighbour in list to send
+                        HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toConsume", String.valueOf(totalAppliancePowerConsumption));
+                        String[] servicesArgs = new String[] {"Power-Storage_Distribution", "Power-Generation"};
+                        Iterator consumptionEngine = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator();
+                        AID first = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator().next();
+                        while (consumptionEngine.hasNext()) {
+                            AID temp = (AID) consumptionEngine.next();
+                            if (currentNeighbour.getLocalName().equals(temp.getLocalName()) && consumptionEngine.hasNext()){
+                                currentNeighbour = (AID) consumptionEngine.next();
+                                break;
+                            } else if (!consumptionEngine.hasNext()) {
+                                currentNeighbour = first;
+                                break;
+                            }
+                        }
                         break;
                 }
-            } else {
+            }
+            else {
                 block();
             }
         }

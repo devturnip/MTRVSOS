@@ -171,7 +171,7 @@ public class EVAgent extends Agent {
                     //calculate remaining battery first
                     boolean breakLoop = false;
                     double percent = (holdCapacity / maxCapacity) * 100;
-                    LOGGER.info(getLocalName() + " at " + percent + ". Hold:" + holdCapacity + " Max:" + maxCapacity);
+                    LOGGER.debug(getLocalName() + " at " + percent + ". Hold:" + holdCapacity + " Max:" + maxCapacity);
                     double toDeduct = consumptionRate * moveDistance;
                     boolean stopCharging = false;
 
