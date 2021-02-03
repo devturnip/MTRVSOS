@@ -12,20 +12,22 @@ import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.Maps;
+import utils.Settings;
 import utils.Utils;
 
 import java.util.*;
 
 public class SmartHomeAgent extends Agent {
+    Settings settingsInstance = Settings.getSettingsInstance();
     private HashMap<String, Double> appliancesList = new HashMap<>();
     private double totalAppliancePowerConsumption = 0;
-    private int rateSecs = 1000;
+    private int rateSecs = settingsInstance.getRateSecsSmartHome();
     private boolean hasInit = false;
 
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
-    private int houseUnit = 100; //represents number of houses per agent
+    private int houseUnit = settingsInstance.getHouseUnit(); //represents number of houses per agent
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();

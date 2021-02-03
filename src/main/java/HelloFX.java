@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.Power;
 import utils.Maps;
+import utils.Settings;
 import utils.Utils;
 
 import java.math.BigDecimal;
@@ -38,19 +39,34 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class HelloFX extends Application {
 
+    Settings settingsInstance = Settings.getSettingsInstance();
+
     //FLAGS
-    private String PORT_NAME = "7778";
-    private String HOSTNAME = "localhost";
-    private int multiplier = 2;
-    private int imageHeightXY = 30;
-    private int homeImageXY = 20;
-    private int evImageXY = 15;
-    private double canvas_x = 1024;
-    private double canvas_y = 768;
-    private int numPowerAgents = 1;
-    private int numPowerDisAgents = 5;
-    private int numSmartHomeAgents = 10;
-    private int numEVAgents = 5;
+//    private String PORT_NAME = "7778";
+//    private String HOSTNAME = "localhost";
+//    private int multiplier = 2;
+//    private int imageHeightXY = 30;
+//    private int homeImageXY = 20;
+//    private int evImageXY = 15;
+//    private double canvas_x = 1024;
+//    private double canvas_y = 768;
+//    private int numPowerAgents = 1;
+//    private int numPowerDisAgents = 5;
+//    private int numSmartHomeAgents = 10;
+//    private int numEVAgents = 5;
+
+    private String PORT_NAME = settingsInstance.getPORT_NAME();
+    private String HOSTNAME = settingsInstance.getHOSTNAME();
+    private int multiplier = settingsInstance.getMultiplier();
+    private int imageHeightXY = settingsInstance.getImageHeightXY();
+    private int homeImageXY = settingsInstance.getHomeImageXY();
+    private int evImageXY = settingsInstance.getEvImageXY();
+    private double canvas_x = settingsInstance.getCanvasX();
+    private double canvas_y = settingsInstance.getCanvasY();
+    private int numPowerAgents = settingsInstance.getNumPowerAgents();
+    private int numPowerDisAgents = settingsInstance.getNumPowerDisAgents();
+    private int numSmartHomeAgents = settingsInstance.getNumSmartHomeAgents();
+    private int numEVAgents = settingsInstance.getNumEVAgents();
 
     //VARS
     private String SoSAgentContainerName = "SoSAgentContainer";

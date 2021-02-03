@@ -15,16 +15,18 @@ import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.Maps;
+import utils.Settings;
 import utils.Utils;
 
 import java.util.*;
 
 public class EVAgent extends Agent {
+    Settings settingsInstance = Settings.getSettingsInstance();
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
-    private double canvas_x = 1024;
-    private double canvas_y = 768;
+    private double canvas_x = settingsInstance.getCanvasX();
+    private double canvas_y = settingsInstance.getCanvasY();
     private boolean isTravelling = false;
     private int moveDistance = 20;
     private int moveDistanceStatic = 20;
