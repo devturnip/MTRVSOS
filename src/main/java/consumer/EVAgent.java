@@ -33,6 +33,9 @@ public class EVAgent extends Agent {
     private double maxCapacity = 0;
     private double holdCapacity = 0;
     private double consumptionRate = 0;
+    private boolean stopCharging = false;
+    private boolean tryNext = false;
+    private boolean hasTarget = false;
 
     private double canvas_x = settingsInstance.getCanvasX();
     private double canvas_y = settingsInstance.getCanvasY();
@@ -186,7 +189,6 @@ public class EVAgent extends Agent {
                     double percent = (holdCapacity / maxCapacity) * 100;
                     LOGGER.debug(getLocalName() + " at " + percent + ". Hold:" + holdCapacity + " Max:" + maxCapacity);
                     double toDeduct = consumptionRate * moveDistance;
-                    boolean stopCharging = false;
 
                     Point2D nowPoint = new Point2D((int) agentImageView.getX(), (int) agentImageView.getY());
                     int currentX = (int) nowPoint.x;
@@ -194,15 +196,40 @@ public class EVAgent extends Agent {
 
                     LOGGER.debug(getLocalName() + " NX:" + nowPoint.x + " NY:" + nowPoint.y + " MOVEDIST:" + moveDistance);
 
-                    if (percent >= 20 && stopCharging == false) {
-                        breakLoop = moveCar(agent, currentX, currentY, toDeduct, nowPoint, finalDestPoint, false);
-
-                    } else {
-                        //find nearest charging station
+                    if (percent >= 30 && stopCharging==false) {
+                        if (currentColour!=GREEN) {
+                            currentColour = GREEN;
+                            mapsInstance.changeColor(agentImageView, "GREEN");
+                        }
                         nearestNeighbour = utility.getNearest(agent, currentX, currentY, "EV-Charging");
-                        HashMap<String, Point2D> agentPoints = mapsInstance.getAgentsMappedPoint2D();
-                        Point2D nearestCharger = agentPoints.get(nearestNeighbour.getKey().getLocalName());
-                        stopCharging = moveCar(agent, currentX, currentY, toDeduct, nowPoint, nearestCharger, true);
+                        breakLoop = moveCar(agent, currentX, currentY, toDeduct, nowPoint, finalDestPoint, false, nearestNeighbour.getKey());
+
+                    }
+                    else{
+                        if (currentColour != ORANGE) {
+                            currentColour = ORANGE;
+                            mapsInstance.changeColor(agentImageView, "ORANGE");
+                        }
+                        //find nearest charging station
+                        if (tryNext==false) {
+                            nearestNeighbour = utility.getNearest(agent, currentX, currentY, "EV-Charging");
+                            HashMap<String, Point2D> agentPoints = mapsInstance.getAgentsMappedPoint2D();
+                            Point2D nearestCharger = agentPoints.get(nearestNeighbour.getKey().getLocalName());
+                            stopCharging = moveCar(agent, currentX, currentY, toDeduct, nowPoint, nearestCharger, true, nearestNeighbour.getKey());
+                        } else {
+                            if (hasTarget==false) {
+                                nearestNeighbour = utility.getNearest(agent, currentX, currentY, "EV-Charging", nearestNeighbour.getKey());
+                                LOGGER.debug("NEXT NEIGHBOUR:" + nearestNeighbour.getKey().getLocalName());
+                                HashMap<String, Point2D> agentPoints = mapsInstance.getAgentsMappedPoint2D();
+                                Point2D nearestCharger = agentPoints.get(nearestNeighbour.getKey().getLocalName());
+                                stopCharging = moveCar(agent, currentX, currentY, toDeduct, nowPoint, nearestCharger, true, nearestNeighbour.getKey());
+                                hasTarget=true;
+                            } else {
+                                HashMap<String, Point2D> agentPoints = mapsInstance.getAgentsMappedPoint2D();
+                                Point2D nearestCharger = agentPoints.get(nearestNeighbour.getKey().getLocalName());
+                                stopCharging = moveCar(agent, currentX, currentY, toDeduct, nowPoint, nearestCharger, true, nearestNeighbour.getKey());
+                            }
+                        }
 
                     }
 
@@ -217,7 +244,7 @@ public class EVAgent extends Agent {
         }; new Thread(travel).start();
     }
 
-    private boolean moveCar(Agent agent, int currentX, int currentY, double toDeduct, Point2D nowPoint, Point2D destination, boolean toCharge) throws InterruptedException {
+    private boolean moveCar(Agent agent, int currentX, int currentY, double toDeduct, Point2D nowPoint, Point2D destination, boolean toCharge, AID charger) throws InterruptedException {
         boolean breakLoop = false;
 
         Point2D NUP = new Point2D(currentX-moveDistance,currentY);
@@ -271,9 +298,6 @@ public class EVAgent extends Agent {
                     agentLabel.setTranslateY(NUP.y+(evImageXY*multiplier));
                 }
             });
-            if (currentColour!=GREEN) {
-                mapsInstance.changeColor(agentImageView, "GREEN");
-            }
         }
         else if (maxMoved == distNDOWN) {
             breakLoop = false;
@@ -289,9 +313,6 @@ public class EVAgent extends Agent {
                     agentLabel.setTranslateY(NDOWN.y+(evImageXY*multiplier));
                 }
             });
-            if (currentColour!=GREEN) {
-                mapsInstance.changeColor(agentImageView, "GREEN");
-            }
         }
         else if (maxMoved == distNLEFT) {
             breakLoop = false;
@@ -307,9 +328,6 @@ public class EVAgent extends Agent {
                     agentLabel.setTranslateY(NLEFT.y+(evImageXY*multiplier));
                 }
             });
-            if (currentColour!=GREEN) {
-                mapsInstance.changeColor(agentImageView, "GREEN");
-            }
         }
         else if (maxMoved == distNRIGHT) {
             breakLoop = false;
@@ -325,15 +343,13 @@ public class EVAgent extends Agent {
                     agentLabel.setTranslateY(NRIGHT.y+(evImageXY*multiplier));
                 }
             });
-            if (currentColour!=GREEN) {
-                mapsInstance.changeColor(agentImageView, "GREEN");
-            }
         }
         else {
             //isTravelling = false;
             LOGGER.debug("NOTMOVING");
             breakLoop = true;
             if (currentColour!=RED) {
+                currentColour = RED;
                 mapsInstance.changeColor(agentImageView, "RED");
             }
         }
@@ -357,29 +373,57 @@ public class EVAgent extends Agent {
         if (toCharge == true && nowPoint.distance(destination) >=0 && nowPoint.distance(destination) <=4) {
             LOGGER.debug(getLocalName() + " is at charging stationnnnnnnnnnnnnnnnnnnn. Sending message to " + nearestNeighbour.getKey());
             HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toCharge", String.valueOf(maxCapacity));
-            utility.sendMessageWithArgs(this, nearestNeighbour.getKey(), arguments, "BEGIN_CHARGE", "REQUEST");
-            if (currentColour!=ORANGE) {
-                mapsInstance.changeColor(agentImageView, "ORANGE");
-            }
+            utility.sendMessageWithArgs(this, charger, arguments, "BEGIN_CHARGE", "REQUEST");
+            double percent = (holdCapacity/maxCapacity) * 100;
+            int rejectCount = 0;
             while (true) {
                 ACLMessage msg = agent.receive();
                 if (msg!=null) {
                     String contents = msg.getContent();
                     if (contents.equals("ACCEPT_CHARGE")) {
-                        holdCapacity = holdCapacity + Double.parseDouble(arguments.getValue());
-                        LOGGER.info(agent.getLocalName() + "fully charged");
-                        breakLoop = true;
-                        break;
+                        double chargeValue = Double.parseDouble(arguments.getValue());
+                        double temp = holdCapacity + chargeValue;
+                        if (temp>=maxCapacity) {
+                            chargeValue = temp - maxCapacity;
+                        }
+                        holdCapacity = holdCapacity + chargeValue;
+                        LOGGER.info(agent.getLocalName() + "fully charged: " + holdCapacity + "/" + maxCapacity);
+                        if (percent > 10) {
+                            tryNext = false;
+                            hasTarget = false;
+                            return true;
+                        } else {
+                            return false;
+                        }
                     }
                     else if (contents.equals("REJECT_CHARGE")) {
+                        if (rejectCount >= 10) {
+                            rejectCount = 0;
+
+                            if (percent > 10) {
+                                tryNext = true;
+                                return false;
+                            }
+                        }
+                        rejectCount += 1;
                         LOGGER.info("Rejected charge");
                         Thread.sleep(1000);
-                        utility.sendMessageWithArgs(this, nearestNeighbour.getKey(), arguments, "BEGIN_CHARGE", "REQUEST");
+                        utility.sendMessageWithArgs(this, charger, arguments, "BEGIN_CHARGE", "REQUEST");
                     }
                 } else {
-                    LOGGER.debug(getLocalName() + " received no messages.");
+                    if (rejectCount >= 5) {
+                        rejectCount = 0;
+
+                        if (percent > 10) {
+                            tryNext = true;
+                            hasTarget = false;
+                            return false;
+                        }
+                    }
+                    rejectCount += 1;
+                    LOGGER.debug(getLocalName() + " received no messages. COUNT=" + rejectCount);
                     Thread.sleep(1000);
-                    utility.sendMessageWithArgs(this, nearestNeighbour.getKey(), arguments, "BEGIN_CHARGE", "REQUEST");
+                    utility.sendMessageWithArgs(this, charger, arguments, "BEGIN_CHARGE", "REQUEST");
                 }
 
             }
@@ -447,12 +491,14 @@ public class EVAgent extends Agent {
         @Override
         protected void onTick() {
             HashMap<String, ImageView> hm = mapsInstance.getAgentMap(getLocalName(), true);
-            HashMap.Entry<String, ImageView> entry = hm.entrySet().iterator().next();
-            String agentName = entry.getKey();
-            ImageView iv = entry.getValue();
-            agentImageView = iv;
-            listOfAgentImageViews = mapsInstance.getAgentsMappedLocation();
-            listOfAgentPositions = mapsInstance.getAgentsMappedPoint2D();
+            if (hm!=null && !hm.isEmpty()) {
+                HashMap.Entry<String, ImageView> entry = hm.entrySet().iterator().next();
+                String agentName = entry.getKey();
+                ImageView iv = entry.getValue();
+                agentImageView = iv;
+                listOfAgentImageViews = mapsInstance.getAgentsMappedLocation();
+                listOfAgentPositions = mapsInstance.getAgentsMappedPoint2D();
+            }
         }
     }
 }

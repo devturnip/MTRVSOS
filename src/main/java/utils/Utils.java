@@ -200,6 +200,44 @@ public class Utils {
         return retMap;
     }
 
+    public HashMap.Entry<AID, Double> getNearest(Agent agent1, double ax, double ay, String serviceName, AID previousNeighbour) {
+        LOGGER.debug("GET NEAREST CALLED, PREVIOUS:" + previousNeighbour.getLocalName());
+        double tempDistance = 0;
+        double retDistance = 0;
+        AID retAgent = null;
+
+        Maps mapInstance = Maps.getMapsInstance();
+        Point2D agent1_loc = new Point2D(ax, ay);
+        Point2D agent2_loc;
+        AID[] agents = getAgentNamesByService(agent1, serviceName);
+        ArrayList<AID> agentsAL = new ArrayList<>();
+
+        for (AID agent:agents) {
+            agentsAL.add(agent);
+        }
+
+        agentsAL.remove(previousNeighbour);
+
+        for (int i=0; i<agentsAL.size(); i++) {
+            HashMap.Entry<String, ImageView> entry = mapInstance.getAgentMap(agentsAL.get(i).getLocalName(), true).entrySet().iterator().next();
+            agent2_loc = new Point2D(entry.getValue().getX(), entry.getValue().getY());
+            tempDistance = agent1_loc.distance(agent2_loc);
+            if (retDistance == 0) {
+                retDistance = tempDistance;
+                retAgent = agentsAL.get(i);
+            } else if (tempDistance < retDistance) {
+                retDistance = tempDistance;
+                retAgent = agentsAL.get(i);
+            }
+        }
+
+        LOGGER.info("SHORTEST Distance between " + agent1.getLocalName() + " and " +
+                retAgent.getLocalName() + " is " + retDistance);
+
+        HashMap.Entry<AID, Double> retMap = new HashMap.SimpleEntry<AID, Double>(retAgent, Double.valueOf(retDistance));
+        return retMap;
+    }
+
     public HashMap.Entry<AID, Double> getNearest(Agent agent1, double ax, double ay, String[] serviceNames) {
         double tempDistance = 0;
         double retDistance = 0;
@@ -256,6 +294,13 @@ public class Utils {
                 break;
             case "PROPOSE":
                 msg = new ACLMessage(ACLMessage.PROPOSE);
+                msg.addReceiver(recipient);
+                msg.setContent(message);
+                sender.send(msg);
+                //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName());
+                break;
+            case "REFUSE":
+                msg = new ACLMessage(ACLMessage.REFUSE);
                 msg.addReceiver(recipient);
                 msg.setContent(message);
                 sender.send(msg);

@@ -2,6 +2,7 @@ package power;
 
 import com.opencsv.exceptions.CsvValidationException;
 import com.sun.javafx.geom.Rectangle;
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
@@ -30,6 +31,7 @@ public class PowerStoreDisAgent extends Agent {
     private ImageView agentImageView;
     private Label agentLabel;
     private ArrayList<Behaviour> behaviourList = new ArrayList<>();
+    private AID correspondent;
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Power powerInstance = Power.getPowerInstance();
@@ -54,15 +56,18 @@ public class PowerStoreDisAgent extends Agent {
 
         Utils utils = new Utils();
 
-        boolean isChargingStation = new Random().nextBoolean();
+//        boolean isChargingStation = new Random().nextBoolean();
+//
+//        if (isChargingStation) {
+//            String[] arguments = {"Power-Storage_Distribution","EV-Charging"};
+//            utils.registerServices(this, arguments);
+//        }
+//        else {
+//            utils.registerServices(this, "Power-Storage_Distribution");
+//        }
 
-        if (isChargingStation) {
-            String[] arguments = {"Power-Storage_Distribution","EV-Charging"};
-            utils.registerServices(this, arguments);
-        }
-        else {
-            utils.registerServices(this, "Power-Storage_Distribution");
-        }
+        String[] arguments = {"Power-Storage_Distribution","EV-Charging"};
+        utils.registerServices(this, arguments);
 
         InitPosition initPosition = new InitPosition(this, 2000);
         ReceiveMessage receiveMessage = new ReceiveMessage();
@@ -77,6 +82,7 @@ public class PowerStoreDisAgent extends Agent {
         super.takeDown();
         LOGGER.info(getLocalName() + " takedown. Killing...");
         powerInstance.subtractGridMax(maxCapacity);
+        powerInstance.subtractPowerLevel(holdCapacity);
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {
@@ -84,6 +90,9 @@ public class PowerStoreDisAgent extends Agent {
                 LOGGER.info("Removing behaviour(s): "+b);
                 removeBehaviour(b);
             }
+        }
+        if (correspondent!=null){
+            utils.sendMessage(this, correspondent, "REJECT_STORE", "REFUSE");
         }
         mapsInstance.removeUI(agentImageView);
         mapsInstance.removeUI(agentLabel);
@@ -178,10 +187,12 @@ public class PowerStoreDisAgent extends Agent {
                             LOGGER.info(myAgent.getLocalName() + " received PROPOSE (" + contents + ") from " + msg.getSender().getLocalName());
                             ACLMessage reply = msg.createReply();
                             if (holdCapacity == 0 || holdCapacity < maxCapacity) {
+                                correspondent = msg.getSender();
                                 reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                                 reply.setContent("ACCEPT_STORE");
                                 send(reply);
                             } else if (holdCapacity >= maxCapacity) {
+                                correspondent = null;
                                 myAgent.addBehaviour(new GeneratePower("0"));
                                 reply.setPerformative(ACLMessage.REFUSE);
                                 reply.setContent("REJECT_STORE");

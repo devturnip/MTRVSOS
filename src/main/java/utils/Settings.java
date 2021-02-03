@@ -21,7 +21,7 @@ public class Settings {
     private int numPowerAgents = 2;
     private int numPowerDisAgents = 5;
     private int numSmartHomeAgents = 10;
-    private int numEVAgents = 5;
+    private int numEVAgents = 3;
 
     //other
     private String PORT_NAME = "7778";

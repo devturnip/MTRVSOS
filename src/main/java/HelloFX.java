@@ -1,6 +1,4 @@
 import com.sun.javafx.geom.Point2D;
-import com.sun.javafx.geom.Rectangle;
-import jade.core.Agent;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
@@ -103,6 +101,7 @@ public class HelloFX extends Application {
                     Platform.runLater(new Thread(new Runnable() {
                         @Override
                         public void run() {
+                            totalPowerLevels = powerInstance.getGridMax();
                             double currentActualPower = powerInstance.showPowerLevels();
                             double holder = (currentActualPower/totalPowerLevels)*100;
                             BigDecimal bd = new BigDecimal(holder).setScale(2, RoundingMode.HALF_UP);
