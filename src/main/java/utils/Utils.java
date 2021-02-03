@@ -4,6 +4,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
@@ -27,6 +28,14 @@ public class Utils {
     private ArrayList<Double> powerStorageCapacityValues = new ArrayList<>();
 
     public Utils() {
+    }
+
+    public void searchForAgent(String agentName){
+        AMSAgentDescription[] amsAgentDescriptions = null;
+
+        SearchConstraints searchConstraints = new SearchConstraints();
+        searchConstraints.setMaxResults(new Long(1));
+
     }
 
     public AID[] getAgentNamesByService(Agent a, String service) {

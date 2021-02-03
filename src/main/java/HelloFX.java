@@ -1,27 +1,31 @@
 import com.sun.javafx.geom.Point2D;
 import com.sun.javafx.geom.Rectangle;
+import jade.core.Agent;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
+import jade.wrapper.ControllerException;
 import jade.wrapper.StaleProxyException;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -43,19 +47,6 @@ public class HelloFX extends Application {
     Settings settingsInstance = Settings.getSettingsInstance();
 
     //FLAGS
-//    private String PORT_NAME = "7778";
-//    private String HOSTNAME = "localhost";
-//    private int multiplier = 2;
-//    private int imageHeightXY = 30;
-//    private int homeImageXY = 20;
-//    private int evImageXY = 15;
-//    private double canvas_x = 1024;
-//    private double canvas_y = 768;
-//    private int numPowerAgents = 1;
-//    private int numPowerDisAgents = 5;
-//    private int numSmartHomeAgents = 10;
-//    private int numEVAgents = 5;
-
     private String PORT_NAME = settingsInstance.getPORT_NAME();
     private String HOSTNAME = settingsInstance.getHOSTNAME();
     private int multiplier = settingsInstance.getMultiplier();
@@ -79,6 +70,7 @@ public class HelloFX extends Application {
     private ContainerController sosAgentContainerController;
     private ContainerController evAgentContainerController;
     private double totalPowerLevels = 0;
+    private String sosAgentName = "SoSAgent";
     //private HashMap<String, ImageView> powAgentMap = new HashMap<String, ImageView>();
 
     private BlockingQueue<String> agentsQueue = new LinkedBlockingQueue<>();
@@ -154,8 +146,14 @@ public class HelloFX extends Application {
         hbox.setAlignment(Pos.BASELINE_CENTER);
         hbox.getChildren().addAll(label, progressvalues);
 
+        VBox vBox = new VBox();
+        vBox.getChildren().addAll(new Label("Placeholder"));
+        vBox.setPadding(new Insets(10,50,50,50));
+        vBox.setStyle("-fx-background-color: #E6E6FA;");
+
         BorderPane border = new BorderPane();
         border.setCenter(canvas);
+//        border.setRight(vBox);
         border.setBottom(hbox);
 
         Runtime runtime = Runtime.instance();
@@ -316,7 +314,7 @@ public class HelloFX extends Application {
         profile.setParameter(Profile.MAIN_PORT, PORT_NAME);
         ContainerController containerController = runtime.createAgentContainer(profile);
         sosAgentContainerController = containerController;
-        String agentName = "SoSAgent";
+        String agentName = sosAgentName;
         try {
             AgentController ag = containerController.createNewAgent(agentName, "SoS.SoSAgent",
                     new Object[]{});
@@ -419,6 +417,40 @@ public class HelloFX extends Application {
         return agentName;
     }
 
+    private void renderContextMenu(ImageView imageView, String agentName){
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem menuItem = new MenuItem("Kill");
+        contextMenu.getItems().addAll(menuItem);
+        imageView.setOnContextMenuRequested(new EventHandler<ContextMenuEvent>() {
+            @Override
+            public void handle(ContextMenuEvent contextMenuEvent) {
+                contextMenu.show(imageView, contextMenuEvent.getScreenX(), contextMenuEvent.getScreenY());
+            }
+        });
+
+        menuItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                try {
+                    if (agentName.contains("Power")){
+                        AgentController agentController = powerAgentContainerController.getAgent(agentName);
+                        agentController.kill();
+                    }
+                    else if (agentName.contains("SmartHomeAgent")) {
+                        AgentController agentController = smartHomeAgentContainerController.getAgent(agentName);
+                        agentController.kill();
+                    }
+                    else if(agentName.contains("EVAgent")) {
+                        AgentController agentController = evAgentContainerController.getAgent(agentName);
+                        agentController.kill();
+                    }
+                } catch (ControllerException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
     private void renderImage(Group g, double x, double y, String agentName) {
         Label label = new Label(agentName);
         label.setMinSize(0.5,0.5);
@@ -455,6 +487,7 @@ public class HelloFX extends Application {
         }
         iv.setX(x);
         iv.setY(y);
+        renderContextMenu(iv, agentName);
         Point2D point2D = new Point2D((int)x,(int)y);
         mapsInstance.mapAgentLocation(agentName, point2D);
         //powAgentMap.put(agentName, iv);
