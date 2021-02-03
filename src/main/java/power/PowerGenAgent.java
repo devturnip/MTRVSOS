@@ -27,7 +27,7 @@ public class PowerGenAgent extends Agent {
     //toAdd needs to be sampled from a probability distribution of actual power grid rates.
     //private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
     private int toAdd = 0;
-    private int rateSecs = 200;
+    private int rateSecs = 1000;
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
@@ -93,10 +93,11 @@ public class PowerGenAgent extends Agent {
     }
 
     private void determineCapacity() {
-        //similarly, capacity needs to be sampled from an actual distribution of capacities.
-        maxCapacity = new Random().ints(500000, 1000000).findFirst().getAsInt();
-        powerInstance.addGridMax(maxCapacity);
+        //sample storage capacity and generation from actual US energy data.
+        //maxCapacity = new Random().ints(500000, 1000000).findFirst().getAsInt();
         try {
+            maxCapacity = utility.getStorageCapacity();
+            powerInstance.addGridMax(maxCapacity);
             toAdd = (int) utility.getPowerGenRate()*1000; //original vals are in mwh, convert to kwh;
             LOGGER.debug("Randomised: " + String.valueOf(toAdd));
         } catch (IOException | CsvValidationException e) {

@@ -25,6 +25,7 @@ public class SmartHomeAgent extends Agent {
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
+    private int houseUnit = 100; //represents number of houses per agent
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
@@ -88,6 +89,7 @@ public class SmartHomeAgent extends Agent {
             //System.out.println(pair.getKey() + " = " + pair.getValue());
             totalAppliancePowerConsumption = totalAppliancePowerConsumption + (Double)pair.getValue();
         }
+        totalAppliancePowerConsumption = totalAppliancePowerConsumption * houseUnit;
     }
 
     private void initPosition() {

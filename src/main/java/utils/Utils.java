@@ -24,6 +24,7 @@ public class Utils {
     private static Logger LOGGER = LoggerFactory.getLogger(Utils.class);
     private InputStream inputStream = null;
     private ArrayList<Double> powerGenCapacityValues = new ArrayList<>();
+    private ArrayList<Double> powerStorageCapacityValues = new ArrayList<>();
 
     public Utils() {
     }
@@ -295,7 +296,7 @@ public class Utils {
 
     public double getPowerGenRate() throws IOException, CsvValidationException {
         if (powerGenCapacityValues.size() == 0) {
-            inputStream = this.getClass().getClassLoader().getResourceAsStream("data/netgen_final.csv");
+            inputStream = this.getClass().getClassLoader().getResourceAsStream("data/netgen_10k.csv");
             if (inputStream == null) {
                 LOGGER.error("Resource does not exist");
             }
@@ -306,7 +307,7 @@ public class Utils {
                 while ((nextLine = csvReader.readNext()) != null) {
                     if (nextLine != null) {
                         //ignore header
-                        LOGGER.debug(Arrays.toString(nextLine));
+                        //LOGGER.debug(Arrays.toString(nextLine));
                         powerGenCapacityValues.add(Double.parseDouble(nextLine[1]));
                         powerGenCapacityValues.add(Double.parseDouble(nextLine[2]));
                         powerGenCapacityValues.add(Double.parseDouble(nextLine[3]));
@@ -315,8 +316,32 @@ public class Utils {
             }
         }
         double returnValue = powerGenCapacityValues.get(new Random().nextInt(new Random().ints(1, powerGenCapacityValues.size()).findFirst().getAsInt()));
-        returnValue = (returnValue/30)/24; //divide by 30 days, divide by 24 hours to return net generation in kwh
+        returnValue = (returnValue/30)/24; //divide by 30 days, divide by 24 hours to return net generation in mwh
         return returnValue;
 
+    }
+
+    public double getStorageCapacity() throws IOException, CsvValidationException {
+        if (powerStorageCapacityValues.size() == 0){
+            inputStream = this.getClass().getClassLoader().getResourceAsStream("data/storage_capacity.csv");
+            if (inputStream == null) {
+                LOGGER.error("Resource does not exist");
+            }
+            else {
+                CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream));
+                csvReader.skip(1);
+                String[] nextLine;
+                while ((nextLine = csvReader.readNext()) != null) {
+                    if (nextLine != null) {
+                        //ignore header
+                        //LOGGER.debug(nextLine[3]);
+                        powerStorageCapacityValues.add(Double.parseDouble(nextLine[3]));
+                    }
+                }
+            }
+        }
+        double returnValue = powerStorageCapacityValues.get(new Random().nextInt(new Random().ints(1,powerStorageCapacityValues.size()).findFirst().getAsInt()));
+        returnValue = returnValue*1000; //return in kwh
+        return returnValue;
     }
 }
