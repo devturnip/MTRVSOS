@@ -11,6 +11,7 @@ import jade.lang.acl.ACLMessage;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,14 +26,18 @@ public class EVAgent extends Agent {
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
-    private double canvas_x = settingsInstance.getCanvasX();
-    private double canvas_y = settingsInstance.getCanvasY();
+    private Label agentLabel;
     private boolean isTravelling = false;
     private int moveDistance = 20;
     private int moveDistanceStatic = 20;
     private double maxCapacity = 0;
     private double holdCapacity = 0;
     private double consumptionRate = 0;
+
+    private double canvas_x = settingsInstance.getCanvasX();
+    private double canvas_y = settingsInstance.getCanvasY();
+    private int evImageXY = settingsInstance.getEvImageXY();
+    private int multiplier = settingsInstance.getMultiplier();
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
@@ -103,6 +108,8 @@ public class EVAgent extends Agent {
                 removeBehaviour(b);
             }
         }
+        mapsInstance.removeUI(agentImageView);
+        mapsInstance.removeUI(agentLabel);
         doDelete();
     }
 
@@ -131,6 +138,10 @@ public class EVAgent extends Agent {
         agent_X = iv.getX();
         agent_Y = iv.getY();
         LOGGER.debug("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
+
+        HashMap<String, Label> lm = mapsInstance.getAgentLabelMap(this.getLocalName());
+        Map.Entry<String, Label> labelEntry = lm.entrySet().iterator().next();
+        agentLabel = labelEntry.getValue();
     }
 
     private void updateSelfPosition() {
@@ -256,6 +267,8 @@ public class EVAgent extends Agent {
                 public void run() {
                     agentImageView.setX(NUP.x);
                     agentImageView.setY(NUP.y);
+                    agentLabel.setTranslateX(NUP.x);
+                    agentLabel.setTranslateY(NUP.y+(evImageXY*multiplier));
                 }
             });
             if (currentColour!=GREEN) {
@@ -272,6 +285,8 @@ public class EVAgent extends Agent {
                 public void run() {
                     agentImageView.setX(NDOWN.x);
                     agentImageView.setY(NDOWN.y);
+                    agentLabel.setTranslateX(NDOWN.x);
+                    agentLabel.setTranslateY(NDOWN.y+(evImageXY*multiplier));
                 }
             });
             if (currentColour!=GREEN) {
@@ -288,6 +303,8 @@ public class EVAgent extends Agent {
                 public void run() {
                     agentImageView.setX(NLEFT.x);
                     agentImageView.setY(NLEFT.y);
+                    agentLabel.setTranslateX(NLEFT.x);
+                    agentLabel.setTranslateY(NLEFT.y+(evImageXY*multiplier));
                 }
             });
             if (currentColour!=GREEN) {
@@ -304,6 +321,8 @@ public class EVAgent extends Agent {
                 public void run() {
                     agentImageView.setX(NRIGHT.x);
                     agentImageView.setY(NRIGHT.y);
+                    agentLabel.setTranslateX(NRIGHT.x);
+                    agentLabel.setTranslateY(NRIGHT.y+(evImageXY*multiplier));
                 }
             });
             if (currentColour!=GREEN) {
@@ -399,7 +418,6 @@ public class EVAgent extends Agent {
             nearestNeighbours = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs);
             nearestNeighbour = utility.getNearest(this.myAgent, agent_X, agent_Y, servicesArgs);
             currentNeighbour = nearestNeighbour.getKey();
-
         }
     }
 

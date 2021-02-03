@@ -450,6 +450,8 @@ public class HelloFX extends Application {
             iv = new ImageView(ig3);
             iv.setFitHeight(evImageXY*multiplier);
             iv.setFitWidth(evImageXY*1.75*multiplier);
+            label.setTranslateX(x);
+            label.setTranslateY(y+(evImageXY*multiplier));
         }
         iv.setX(x);
         iv.setY(y);
