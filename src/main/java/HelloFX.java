@@ -6,6 +6,7 @@ import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.ControllerException;
 import jade.wrapper.StaleProxyException;
+import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -32,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import power.Power;
 import utils.Maps;
 import utils.Settings;
+import utils.TimeTracker;
 import utils.Utils;
 
 import java.math.BigDecimal;
@@ -57,6 +59,7 @@ public class HelloFX extends Application {
     private int numPowerDisAgents = settingsInstance.getNumPowerDisAgents();
     private int numSmartHomeAgents = settingsInstance.getNumSmartHomeAgents();
     private int numEVAgents = settingsInstance.getNumEVAgents();
+    private int secondsToRun = settingsInstance.getSecondsToRun();
 
     //VARS
     private String SoSAgentContainerName = "SoSAgentContainer";
@@ -282,6 +285,10 @@ public class HelloFX extends Application {
 
         root.getChildren().addAll(border);
         mapsInstance.setGroup(root);
+
+        TimeTracker timeTracker = TimeTracker.getTimeTrackerInstance();
+        timeTracker.startClock(secondsToRun);
+
         stage.setScene(new Scene(root));
         stage.show();
 
@@ -420,6 +427,8 @@ public class HelloFX extends Application {
         ContextMenu contextMenu = new ContextMenu();
         MenuItem menuItem = new MenuItem("Kill");
         contextMenu.getItems().addAll(menuItem);
+
+        imageView.setPickOnBounds(true);
         imageView.setOnContextMenuRequested(new EventHandler<ContextMenuEvent>() {
             @Override
             public void handle(ContextMenuEvent contextMenuEvent) {

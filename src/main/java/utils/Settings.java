@@ -8,6 +8,7 @@ public class Settings {
     private int rateSecsPowerGen = 1000;
     private int rateSecsSmartHome = 1000;
     private int houseUnit = 100;
+    private int secondsToRun = 60;
 
     //UI Size
     private int multiplier = 2;
@@ -20,8 +21,8 @@ public class Settings {
     //Agent Flags
     private int numPowerAgents = 2;
     private int numPowerDisAgents = 5;
-    private int numSmartHomeAgents = 10;
-    private int numEVAgents = 3;
+    private int numSmartHomeAgents = 5;
+    private int numEVAgents = 2;
 
     //other
     private String PORT_NAME = "7778";
@@ -32,7 +33,8 @@ public class Settings {
     public int getRateSecsSmartHome(){return rateSecsSmartHome;};
     public int getHouseUnit(){return houseUnit;}
     public double getCanvasX(){return canvasX;}
-    public double getCanvasY(){return canvasY;};
+    public double getCanvasY(){return canvasY;}
+    public int getSecondsToRun(){return secondsToRun;};
 
     //UI
     public int getMultiplier(){return multiplier;};

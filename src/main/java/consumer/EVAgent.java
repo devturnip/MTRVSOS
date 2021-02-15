@@ -1,7 +1,6 @@
 package consumer;
 
 import com.sun.javafx.geom.Point2D;
-import com.sun.javafx.geom.Rectangle;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
@@ -10,7 +9,6 @@ import jade.core.behaviours.WakerBehaviour;
 import jade.lang.acl.ACLMessage;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
