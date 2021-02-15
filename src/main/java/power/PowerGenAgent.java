@@ -42,6 +42,7 @@ public class PowerGenAgent extends Agent {
     private Map.Entry<AID, Double> nearestNeighbour = null;
     private LinkedHashMap<AID, Double> nearestNeighbours = new LinkedHashMap<>();
     private ArrayList<Behaviour> behaviourList = new ArrayList<>();
+    private boolean pauseAgent = false;
 
     //message sending flags
     private boolean sentCFP = false;
@@ -89,13 +90,16 @@ public class PowerGenAgent extends Agent {
         InitPosition initPosition = new InitPosition(this, 2000);
         ReceiveMessage receiveMessage = new ReceiveMessage();
         PeriodicPowerGeneration periodicPowerGeneration = new PeriodicPowerGeneration(this, rateSecs);
+        CheckSimulationState checkSimulationState = new CheckSimulationState(this, settingsInstance.getSimCheckRate());
         behaviourList.add(initPosition);
         behaviourList.add(receiveMessage);
         behaviourList.add(periodicPowerGeneration);
+        behaviourList.add(checkSimulationState);
         //addBehaviour(new GeneratePower());
         addBehaviour(initPosition);
         addBehaviour(receiveMessage);
         addBehaviour(periodicPowerGeneration);
+        addBehaviour(checkSimulationState);
     }
 
     private void determineCapacity() {
@@ -169,19 +173,57 @@ public class PowerGenAgent extends Agent {
             double addTo = toAdd;
             double tempHolder = holdCapacity + addTo;
 
-            if (pmsg != null && pmsg.getContent().equals("START")) {
-                if (!isPaused) {
-                    if (holdCapacity < maxCapacity) {
-                        isOn = true;
+            if (pauseAgent == false) {
+                if (pmsg != null && pmsg.getContent().equals("START")) {
+                    if (!isPaused) {
+                        if (holdCapacity < maxCapacity) {
+                            isOn = true;
+
+                            //code to prevent power exceeding maxcapacity
+                            if (tempHolder >= maxCapacity) {
+                                addTo = tempHolder - maxCapacity;
+                                powerInstance.addPowerLevel(addTo);
+                                holdCapacity = holdCapacity + addTo;
+                            } else {
+                                powerInstance.addPowerLevel(addTo);
+                                holdCapacity = holdCapacity + addTo;
+                            }
+
+                            LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                            if (currentColour != GREEN) {
+                                try {
+                                    mapsInstance.changeColor(agentImageView, "GREEN");
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                currentColour = GREEN;
+                            }
+                        } else if (holdCapacity >= maxCapacity) {
+                            LOGGER.info("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
+                            isPaused = true;
+                            if (currentColour != BLUE) {
+                                try {
+                                    mapsInstance.changeColor(agentImageView, "BLUE");
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                currentColour = BLUE;
+                            }
+                        }
+                    } else if (isPaused && holdCapacity < maxCapacity) {
+                        isPaused = false;
 
                         //code to prevent power exceeding maxcapacity
-                        if (tempHolder >= maxCapacity) {
+                        if (tempHolder > maxCapacity) {
                             addTo = tempHolder - maxCapacity;
                             powerInstance.addPowerLevel(addTo);
                             holdCapacity = holdCapacity + addTo;
                         } else {
                             powerInstance.addPowerLevel(addTo);
                             holdCapacity = holdCapacity + addTo;
+                        }
+                        if (holdCapacity >= maxCapacity) {
+                            isPaused = true;
                         }
 
                         LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
@@ -193,97 +235,72 @@ public class PowerGenAgent extends Agent {
                             }
                             currentColour = GREEN;
                         }
-                    } else if (holdCapacity >= maxCapacity) {
-                        LOGGER.info("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
-                        isPaused = true;
-                        if (currentColour != BLUE) {
-                            try {
-                                mapsInstance.changeColor(agentImageView, "BLUE");
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            currentColour = BLUE;
-                        }
-                    }
-                } else if (isPaused && holdCapacity < maxCapacity) {
-                    isPaused = false;
+                    } else if (isPaused && holdCapacity >= maxCapacity) {
+                        if (!sentCFP) {
+                            currentNeighbour = nearestNeighbour.getKey();
+                            utility.sendMessage(myAgent, currentNeighbour, "BEGIN_STORE", "PROPOSE");
+                            sentCFP = true;
+                        } else if (sentCFP) {
+                            if (smsg != null) {
+                                if (smsg.getContent().equals("ACCEPT_STORE")) {
+                                    //System.out.println(myAgent.getLocalName()+ " transferring to nearest neighbour: " + nearestNeighbour.getKey().getLocalName());
+                                    HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toAdd", String.valueOf(toAdd));
+                                    utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "ADD", "REQUEST");
 
-                    //code to prevent power exceeding maxcapacity
-                    if (tempHolder > maxCapacity) {
-                        addTo = tempHolder - maxCapacity;
-                        powerInstance.addPowerLevel(addTo);
-                        holdCapacity = holdCapacity + addTo;
-                    } else {
-                        powerInstance.addPowerLevel(addTo);
-                        holdCapacity = holdCapacity + addTo;
-                    }
-                    if (holdCapacity >= maxCapacity) {
-                        isPaused = true;
-                    }
-
-                    LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
-                    if (currentColour != GREEN) {
-                        try {
-                            mapsInstance.changeColor(agentImageView, "GREEN");
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        currentColour = GREEN;
-                    }
-                } else if (isPaused && holdCapacity >= maxCapacity) {
-                    if (!sentCFP) {
-                        currentNeighbour = nearestNeighbour.getKey();
-                        utility.sendMessage(myAgent, currentNeighbour, "BEGIN_STORE", "PROPOSE");
-                        sentCFP = true;
-                    } else if (sentCFP) {
-                        if (smsg != null) {
-                            if (smsg.getContent().equals("ACCEPT_STORE")) {
-                                //System.out.println(myAgent.getLocalName()+ " transferring to nearest neighbour: " + nearestNeighbour.getKey().getLocalName());
-                                HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toAdd", String.valueOf(toAdd));
-                                utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "ADD", "REQUEST");
-
-                            } else if (smsg.getContent().equals("REJECT_STORE")) {
+                                } else if (smsg.getContent().equals("REJECT_STORE")) {
 //                                System.out.println(myAgent.getLocalName() + ": REJECT_STORE :" + countCFP);
-                                Iterator iterator = nearestNeighbours.keySet().iterator();
-                                while (iterator.hasNext()) {
-                                    AID temp = (AID) iterator.next();
-                                    //System.out.println("AGENT: " + myAgent.getLocalName() + " CURRENTNEIGHBOUR:" + currentNeighbour + " TEMP:" + temp);
-                                    if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && iterator.hasNext()) {
-                                        nextNeighbour = (AID) iterator.next();
-                                        LOGGER.debug("CURRENT:" + temp.getLocalName() + " NEXT:" + nextNeighbour.getLocalName());
-                                        utility.sendMessage(myAgent, nextNeighbour, "BEGIN_STORE", "PROPOSE");
-                                        currentNeighbour = nextNeighbour;
-                                        break;
-                                    }
-                                    if (!iterator.hasNext()) {
-                                        try {
-                                            Thread.sleep(retryTime);
-                                        } catch (InterruptedException e) {
-                                            e.printStackTrace();
+                                    Iterator iterator = nearestNeighbours.keySet().iterator();
+                                    while (iterator.hasNext()) {
+                                        AID temp = (AID) iterator.next();
+                                        //System.out.println("AGENT: " + myAgent.getLocalName() + " CURRENTNEIGHBOUR:" + currentNeighbour + " TEMP:" + temp);
+                                        if (temp.getLocalName().equals(currentNeighbour.getLocalName()) && iterator.hasNext()) {
+                                            nextNeighbour = (AID) iterator.next();
+                                            LOGGER.debug("CURRENT:" + temp.getLocalName() + " NEXT:" + nextNeighbour.getLocalName());
+                                            utility.sendMessage(myAgent, nextNeighbour, "BEGIN_STORE", "PROPOSE");
+                                            currentNeighbour = nextNeighbour;
+                                            break;
                                         }
-                                        currentNeighbour = temp;
-                                        sentCFP = false;
-                                        break;
+                                        if (!iterator.hasNext()) {
+                                            try {
+                                                Thread.sleep(retryTime);
+                                            } catch (InterruptedException e) {
+                                                e.printStackTrace();
+                                            }
+                                            currentNeighbour = temp;
+                                            sentCFP = false;
+                                            break;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                } else if (pmsg != null && pmsg.getContent().equals("STOP")) {
+                    isOn = false;
+                    LOGGER.info(getAID().getName() + " STOPPING POWER GENERATION...");
+                    pmsg = null;
+                    block();
+                } else {
+                    block();
                 }
-            }
-            else if (pmsg != null && pmsg.getContent().equals("STOP")){
-                isOn = false;
-                LOGGER.info(getAID().getName() + " STOPPING POWER GENERATION...");
-                pmsg = null;
-                block();
-            }
-            else {
+            } else if (pauseAgent) {
                 block();
             }
         }
 
         @Override
         public void stop() {
+        }
+    }
+
+    private class CheckSimulationState extends TickerBehaviour{
+        public CheckSimulationState(Agent a, long period) {
+            super(a, period);
+        }
+
+        @Override
+        protected void onTick() {
+            pauseAgent = settingsInstance.getSimulationState();
         }
     }
 
@@ -294,6 +311,12 @@ public class PowerGenAgent extends Agent {
             if (msg != null) {
                 String contents = msg.getContent();
                 switch (contents) {
+                    case "PAUSE":
+                        pauseAgent = true;
+                        break;
+                    case "RESUME" :
+                        pauseAgent = false;
+                        break;
                     case "START":
                         pmsg = msg;
                         break;

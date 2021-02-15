@@ -149,13 +149,49 @@ public class HelloFX extends Application {
         hbox.getChildren().addAll(label, progressvalues);
 
         VBox vBox = new VBox();
-        vBox.getChildren().addAll(new Label("Placeholder"));
-        vBox.setPadding(new Insets(10,50,50,50));
+        Button pauseButton = new Button();
+        pauseButton.setText("Pause");
+        pauseButton.setMinWidth(vBox.getPrefWidth());
+        pauseButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                settingsInstance.setPauseSimulation(true);
+            }
+        });
+
+        Button playButton = new Button();
+        playButton.setText("Play");
+        playButton.setMinWidth(vBox.getPrefWidth());
+        playButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                settingsInstance.setPauseSimulation(false);
+            }
+        });
+
+        Button exitButton = new Button();
+        exitButton.setText("Exit");
+        exitButton.setMinWidth(vBox.getPrefWidth());
+        exitButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                try {
+                    Platform.exit();
+                    System.exit(0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        vBox.getChildren().addAll(playButton, pauseButton, exitButton);
+        vBox.setPadding(new Insets(5,10,10,10));
+        vBox.setAlignment(Pos.BOTTOM_CENTER);
         vBox.setStyle("-fx-background-color: #E6E6FA;");
 
         BorderPane border = new BorderPane();
         border.setCenter(canvas);
-//        border.setRight(vBox);
+        border.setRight(vBox);
         border.setBottom(hbox);
 
         Runtime runtime = Runtime.instance();
@@ -307,6 +343,8 @@ public class HelloFX extends Application {
             smartHomeAgentContainerController.getPlatformController().kill();
             sosAgentContainerController.kill();
             sosAgentContainerController.getPlatformController().kill();
+            evAgentContainerController.kill();
+            evAgentContainerController.getPlatformController().kill();
             Runtime.instance().shutDown();
         } catch (Exception e) {
             e.printStackTrace();

@@ -8,7 +8,15 @@ public class HelloWorldAgent extends Agent{
         System.out.println("My local name is " + getAID().getLocalName());
         System.out.println("My GUID is " + getAID().getName());
         System.out.println("My addresses are " + String.join(",", getAID().getAddressesArray()));
-        Application.launch(HelloFX.class);
+        try {
+            Application.launch(HelloFX.class);
+        } catch (RuntimeException e) {
+            if (e.getCause().getClass() == InterruptedException.class) {
+                //suppress messages
+            } else {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override

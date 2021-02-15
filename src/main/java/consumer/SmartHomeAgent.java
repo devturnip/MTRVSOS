@@ -30,6 +30,7 @@ public class SmartHomeAgent extends Agent {
     private ImageView agentImageView;
     private Label agentLabel;
     private int houseUnit = settingsInstance.getHouseUnit(); //represents number of houses per agent
+    private boolean pauseAgent = false;
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
@@ -60,12 +61,15 @@ public class SmartHomeAgent extends Agent {
         InitPosition initPosition = new InitPosition(this, 2000);
         ReceiveMessage receiveMessage = new ReceiveMessage();
         ConsumeElectricity consumeElectricity = new ConsumeElectricity(this, rateSecs);
+        CheckSimulationState checkSimulationState = new CheckSimulationState(this, settingsInstance.getSimCheckRate());
         behaviourList.add(initPosition);
         behaviourList.add(receiveMessage);
         behaviourList.add(consumeElectricity);
+        behaviourList.add(checkSimulationState);
         addBehaviour(initPosition);
         addBehaviour(receiveMessage);
         addBehaviour(consumeElectricity);
+        addBehaviour(checkSimulationState);
     }
 
     @Override
@@ -138,34 +142,51 @@ public class SmartHomeAgent extends Agent {
 
         @Override
         protected void onTick() {
-            HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toConsume", String.valueOf(totalAppliancePowerConsumption));
-            if(hasInit== true) {
-                if (messageSent == false) {
-                    utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
-                    messageSent = true;
-                } else if (messageSent){
-                    retryCount = retryCount + 1;
-                    LOGGER.debug("BLOCK");
-                    if (retryCount == 5) {
-                        //if blocked more than 5 times, recheck for nearest power source again.
-                        if (currentColour != ORANGE) {
-                            try {
-                                mapsInstance.changeColor(agentImageView, "ORANGE");
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
+            if (pauseAgent == false) {
+                HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toConsume", String.valueOf(totalAppliancePowerConsumption));
+                if (hasInit == true) {
+                    if (messageSent == false) {
+                        utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "BEGIN_CONSUME", "REQUEST");
+                        messageSent = true;
+                    } else if (messageSent) {
+                        retryCount = retryCount + 1;
+                        LOGGER.debug("BLOCK");
+                        if (retryCount == 5) {
+                            //if blocked more than 5 times, recheck for nearest power source again.
+                            if (currentColour != ORANGE) {
+                                try {
+                                    mapsInstance.changeColor(agentImageView, "ORANGE");
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                currentColour = ORANGE;
                             }
-                            currentColour = ORANGE;
+                            retryCount = 0;
+                            String[] servicesArgs = new String[]{"Power-Storage_Distribution", "Power-Generation"};
+                            currentNeighbour = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator().next();
+                            messageSent = false;
                         }
-                        retryCount = 0;
-                        String[] servicesArgs = new String[] {"Power-Storage_Distribution", "Power-Generation"};
-                        currentNeighbour = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, servicesArgs).keySet().iterator().next();
-                        messageSent = false;
+                        block();
                     }
-                    block();
                 }
+            } else if (pauseAgent) {
+                block();
             }
         }
     }
+
+    private class CheckSimulationState extends TickerBehaviour{
+        public CheckSimulationState(Agent a, long period) {
+            super(a, period);
+        }
+
+        @Override
+        protected void onTick() {
+            pauseAgent = settingsInstance.getSimulationState();
+        }
+    }
+
+
 
     private class ReceiveMessage extends CyclicBehaviour {
         @Override
@@ -174,6 +195,12 @@ public class SmartHomeAgent extends Agent {
             if (msg!=null) {
                 String content = msg.getContent();
                 switch (content) {
+                    case "PAUSE":
+                        pauseAgent = true;
+                        break;
+                    case "RESUME" :
+                        pauseAgent = false;
+                        break;
                     case "ACCEPT_CONSUME":
                         messageSent = false;
                         if (currentColour != YELLOWGREEN) {

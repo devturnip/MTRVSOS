@@ -4,10 +4,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import com.sun.javafx.geom.Rectangle;
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.OneShotBehaviour;
-import jade.core.behaviours.WakerBehaviour;
+import jade.core.behaviours.*;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
 import javafx.scene.control.Label;
@@ -15,6 +12,7 @@ import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.Maps;
+import utils.Settings;
 import utils.Utils;
 
 import java.io.IOException;
@@ -32,6 +30,8 @@ public class PowerStoreDisAgent extends Agent {
     private Label agentLabel;
     private ArrayList<Behaviour> behaviourList = new ArrayList<>();
     private AID correspondent;
+    private boolean pauseAgent = false;
+    private Settings settingsInstance = Settings.getSettingsInstance();
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Power powerInstance = Power.getPowerInstance();
@@ -71,10 +71,13 @@ public class PowerStoreDisAgent extends Agent {
 
         InitPosition initPosition = new InitPosition(this, 2000);
         ReceiveMessage receiveMessage = new ReceiveMessage();
+        CheckSimulationState checkSimulationState = new CheckSimulationState(this, settingsInstance.getSimCheckRate());
         behaviourList.add(initPosition);
         behaviourList.add(receiveMessage);
+        behaviourList.add(checkSimulationState);
         addBehaviour(initPosition);
         addBehaviour(receiveMessage);
+        addBehaviour(checkSimulationState);
     }
 
     @Override
@@ -138,37 +141,52 @@ public class PowerStoreDisAgent extends Agent {
         }
         @Override
         public void action() {
-            if (holdCapacity < maxCapacity) {
-                double addTo = Double.parseDouble(toAdd);
-                double temp = holdCapacity + addTo;
-                if (temp >= maxCapacity) {
-                    addTo = temp - maxCapacity;
-                    powerInstance.addPowerLevel(addTo);
-                    holdCapacity = holdCapacity + addTo;
-                } else {
-                    powerInstance.addPowerLevel(addTo);
-                    holdCapacity = holdCapacity + addTo;
-                }
-                LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
-                if (currentColour != GREEN) {
-                    try {
-                        mapsInstance.changeColor(agentImageView, "GREEN");
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+            if (pauseAgent == false) {
+                if (holdCapacity < maxCapacity) {
+                    double addTo = Double.parseDouble(toAdd);
+                    double temp = holdCapacity + addTo;
+                    if (temp >= maxCapacity) {
+                        addTo = temp - maxCapacity;
+                        powerInstance.addPowerLevel(addTo);
+                        holdCapacity = holdCapacity + addTo;
+                    } else {
+                        powerInstance.addPowerLevel(addTo);
+                        holdCapacity = holdCapacity + addTo;
                     }
-                    currentColour = GREEN;
-                }
-            } else if (holdCapacity >= maxCapacity) {
-                LOGGER.info("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
-                if (currentColour != BLUE) {
-                    try {
-                        mapsInstance.changeColor(agentImageView, "BLUE");
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                    if (currentColour != GREEN) {
+                        try {
+                            mapsInstance.changeColor(agentImageView, "GREEN");
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        currentColour = GREEN;
                     }
-                    currentColour = BLUE;
+                } else if (holdCapacity >= maxCapacity) {
+                    LOGGER.info("Max capacity at " + maxCapacity + " of " + getName() + " . Paused.");
+                    if (currentColour != BLUE) {
+                        try {
+                            mapsInstance.changeColor(agentImageView, "BLUE");
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        currentColour = BLUE;
+                    }
                 }
+            } else if (pauseAgent) {
+                block();
             }
+        }
+    }
+
+    private class CheckSimulationState extends TickerBehaviour {
+        public CheckSimulationState(Agent a, long period) {
+            super(a, period);
+        }
+
+        @Override
+        protected void onTick() {
+            pauseAgent = settingsInstance.getSimulationState();
         }
     }
 
@@ -204,6 +222,12 @@ public class PowerStoreDisAgent extends Agent {
                         contents = msg.getContent();
                         ACLMessage reply = msg.createReply();
                         switch(contents) {
+                            case "PAUSE":
+                                pauseAgent = true;
+                                break;
+                            case "RESUME" :
+                                pauseAgent = false;
+                                break;
                             case "ADD":
                                 String key = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getKey();
                                 String value = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue();
