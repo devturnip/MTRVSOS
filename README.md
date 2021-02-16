@@ -10,7 +10,7 @@ Each constituent system in the smart grid SoS is represented by an agent in the 
 1. In your IDE (Intellij), add all jar files in "JADE-all-4.5.0" and "javafx-sdk-15.0.1"
 2. Add everything in "lib" to project library.
 3. Run config for intellij:
-    ![image](notes/run-config.png)
+    ![image](notes/run-config.jpg)
 
 ## Changeable Variables Description
 Found in Settings.java
@@ -52,7 +52,7 @@ Found in Settings.java
 - Values used for power generation are stored in resources > data > netgen_10k.csv (lowest generator profile).
 - At start, the values are uniformly randomly sampled from the csv file.
 - Values are sourced from US Energy Information Administration.
-    ![image](notes/chart.png)
+    ![image](notes/chart.jpg)
 
 ### Power Storage and Distribution Agent
 - Registers capabilities to yellow pages (DFS) for service discovery.
@@ -62,14 +62,14 @@ Found in Settings.java
 - Capacities of this agent and Power Generator Agents are sourced from Form EIA-830, 3_4_Energy_Storage_Y2019, US Energy Information Administration.
 - Values are stored in resources > data > storage_capacity.csv
 - At start, the values are uniformly randomly sampled from the csv file.
- ![image](notes/bat_stor_cap.png)
+ ![image](notes/bat_stor_cap.jpg)
 
 
 ### SmartHome Agent
 - Registers capabilities to yellow pages (DFS) for service discovery.
 - Each Smart Home Agent has a set of Appliances.
 - Appliances are randomly sampled from a probability distribution as shown in table.
- ![table](notes/appliances_uk.png)
+ ![table](notes/appliances_uk.jpg)
 - Sourced from :Mansouri, I., Newborough, M., & Probert, D. (1996). Energy consumption in uk households: Impact of domestic electrical appliances. Applied Energy, 54(3 SPEC. ISS.), 211–285. https://doi.org/10.1016/0306-2619(96)00001-3
 - Consumption levels were based on the annual usage values in the table and divided into a per hour value in kWh.
 
