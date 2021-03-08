@@ -113,7 +113,7 @@ public class SmartHomeAgent extends Agent {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                demandRate.setText("Demand (kwh/s): " + bd.doubleValue());
+                demandRate.setText("D (kwh/s): " + bd.doubleValue());
             }
         });
     }

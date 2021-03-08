@@ -129,7 +129,6 @@ public class PowerGenAgent extends Agent {
         agent_X = iv.getX();
         agent_Y = iv.getY();
         LOGGER.debug("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
-
         HashMap<String, Label> lm = mapsInstance.getAgentLabelMap(this.getLocalName());
         Map.Entry<String, Label> labelEntry = lm.entrySet().iterator().next();
         agentLabel = labelEntry.getValue();
@@ -140,7 +139,7 @@ public class PowerGenAgent extends Agent {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                genRate.setText("GenRate (kwh/s): " + bd.doubleValue());
+                genRate.setText("G (kwh/s): " + bd.doubleValue());
             }
         });
     }
