@@ -8,14 +8,18 @@ import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
+import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import power.Power;
 import utils.Maps;
 import utils.Settings;
 import utils.Utils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 public class SmartHomeAgent extends Agent {
@@ -34,6 +38,7 @@ public class SmartHomeAgent extends Agent {
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
+    private Power powerInstance = Power.getPowerInstance();
 
     private LinkedHashMap<AID, Double> nearestNeighbours = new LinkedHashMap<>();
     private Map.Entry<AID, Double> nearestNeighbour = null;
@@ -75,6 +80,7 @@ public class SmartHomeAgent extends Agent {
     @Override
     protected void takeDown() {
         super.takeDown();
+        powerInstance.subtractDemand(totalAppliancePowerConsumption);
         LOGGER.info(getLocalName() + " takedown. Killing...");
         try { DFService.deregister(this); }
         catch (Exception e) {}
@@ -99,6 +105,17 @@ public class SmartHomeAgent extends Agent {
             totalAppliancePowerConsumption = totalAppliancePowerConsumption + (Double)pair.getValue();
         }
         totalAppliancePowerConsumption = totalAppliancePowerConsumption * houseUnit;
+        powerInstance.addDemand(totalAppliancePowerConsumption);
+        HashMap<String, Label> demandHM = mapsInstance.getDemandGenLabel();
+        Label demandRate = demandHM.get("demandRate");
+        double demandLevel = powerInstance.getDemand();
+        BigDecimal bd = new BigDecimal(demandLevel).setScale(2, RoundingMode.HALF_UP);
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                demandRate.setText("Demand (kwh/s): " + bd.doubleValue());
+            }
+        });
     }
 
     private void initPosition() {

@@ -6,7 +6,6 @@ import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.ControllerException;
 import jade.wrapper.StaleProxyException;
-import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -124,7 +123,7 @@ public class HelloFX extends Application {
         };
 
         final ProgressBar progressBar = new ProgressBar();
-        progressBar.setPrefSize(600,15);
+        progressBar.setPrefSize(400,15);
         Label label = new Label();
         label.setGraphic(progressBar);
         label.setText("Power Levels");
@@ -141,12 +140,18 @@ public class HelloFX extends Application {
             }
         });
 
+        Label genRate = new Label("GenRate (kwh/s): 0");
+        Label demandRate = new Label("Demand (kwh/s): 0");
+
+        mapsInstance.mapDemandGenLabel("genRate", genRate);
+        mapsInstance.mapDemandGenLabel("demandRate", demandRate);
+
         HBox hbox = new HBox();
         hbox.setPadding(new Insets(15,12,15,12));
         hbox.setSpacing(10);
         hbox.setStyle("-fx-background-color: #B0C4DE;");
-        hbox.setAlignment(Pos.BASELINE_CENTER);
-        hbox.getChildren().addAll(label, progressvalues);
+        hbox.setAlignment(Pos.BASELINE_LEFT);
+        hbox.getChildren().addAll(label, progressvalues, genRate, demandRate);
 
         VBox vBox = new VBox();
         Button pauseButton = new Button();

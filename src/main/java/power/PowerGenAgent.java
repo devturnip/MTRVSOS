@@ -6,6 +6,7 @@ import jade.core.Agent;
 import jade.core.behaviours.*;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
+import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
@@ -15,6 +16,8 @@ import utils.Settings;
 import utils.Utils;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 public class PowerGenAgent extends Agent {
@@ -66,6 +69,7 @@ public class PowerGenAgent extends Agent {
         LOGGER.info(getLocalName() + " takedown. Killing...");
         powerInstance.subtractGridMax(maxCapacity);
         powerInstance.subtractPowerLevel(holdCapacity);
+        powerInstance.subtractGenRate(toAdd);
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {
@@ -109,6 +113,7 @@ public class PowerGenAgent extends Agent {
             maxCapacity = utility.getStorageCapacity();
             powerInstance.addGridMax(maxCapacity);
             toAdd = (int) utility.getPowerGenRate()*1000; //original vals are in mwh, convert to kwh;
+            powerInstance.addGenRate(toAdd);
             LOGGER.debug("Randomised: " + String.valueOf(toAdd));
         } catch (IOException | CsvValidationException e) {
             e.printStackTrace();
@@ -128,6 +133,16 @@ public class PowerGenAgent extends Agent {
         HashMap<String, Label> lm = mapsInstance.getAgentLabelMap(this.getLocalName());
         Map.Entry<String, Label> labelEntry = lm.entrySet().iterator().next();
         agentLabel = labelEntry.getValue();
+        HashMap<String, Label> genHM = mapsInstance.getDemandGenLabel();
+        Label genRate = genHM.get("genRate");
+        double genLevel = powerInstance.getGenRate();
+        BigDecimal bd = new BigDecimal(genLevel).setScale(2, RoundingMode.HALF_UP);
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                genRate.setText("GenRate (kwh/s): " + bd.doubleValue());
+            }
+        });
     }
 
     private class GeneratePower extends OneShotBehaviour {

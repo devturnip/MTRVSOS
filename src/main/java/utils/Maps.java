@@ -22,6 +22,7 @@ public class Maps {
     private HashMap<String, Point2D> agentMapPoint2D = new HashMap<>();
     private Group group = null;
     private static Logger LOGGER = LoggerFactory.getLogger(Maps.class);
+    private HashMap<String, Label> demandGenLabel = new HashMap<>();
 
     private Maps(){}
 
@@ -101,6 +102,10 @@ public class Maps {
             }
         return retSubMap;
     }
+
+    public void mapDemandGenLabel(String labelName, Label label) { demandGenLabel.put(labelName, label); }
+
+    public HashMap<String, Label> getDemandGenLabel() { return demandGenLabel; }
 
     public void changeColor(ImageView iv, String Colour) throws InterruptedException {
         final Color[] color = new Color[1];

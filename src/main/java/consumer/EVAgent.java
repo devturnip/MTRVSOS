@@ -12,8 +12,10 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
+import org.apache.commons.math3.analysis.function.Pow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import power.Power;
 import utils.Maps;
 import utils.Settings;
 import utils.Utils;
@@ -44,6 +46,7 @@ public class EVAgent extends Agent {
 
     private Maps mapsInstance = Maps.getMapsInstance();
     private Utils utility = new Utils();
+    private Power powerInstance = Power.getPowerInstance();
 
     private LinkedHashMap<AID, Double> nearestNeighbours = new LinkedHashMap<>();
     private Map.Entry<AID, Double> nearestNeighbour = null;

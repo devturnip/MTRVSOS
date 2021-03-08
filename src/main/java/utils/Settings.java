@@ -7,7 +7,8 @@ public class Settings {
     //Rate Flags
     private int rateSecsPowerGen = 1000;
     private int rateSecsSmartHome = 1000;
-    private int houseUnit = 100;
+    private int rateSecsEV = 2000;
+    private int houseUnit = 1000;
     private int secondsToRun = 600;
 
     //UI Size
@@ -23,8 +24,8 @@ public class Settings {
 
     //Agent Flags
     private int numPowerAgents = 2;
-    private int numPowerDisAgents = 5;
-    private int numSmartHomeAgents = 5;
+    private int numPowerDisAgents = 3;
+    private int numSmartHomeAgents = 8;
     private int numEVAgents = 2;
 
     //other
