@@ -81,6 +81,7 @@ public class SmartHomeAgent extends Agent {
     protected void takeDown() {
         super.takeDown();
         powerInstance.subtractDemand(totalAppliancePowerConsumption);
+        setDemandLabel();
         LOGGER.info(getLocalName() + " takedown. Killing...");
         try { DFService.deregister(this); }
         catch (Exception e) {}
@@ -106,6 +107,10 @@ public class SmartHomeAgent extends Agent {
         }
         totalAppliancePowerConsumption = totalAppliancePowerConsumption * houseUnit;
         powerInstance.addDemand(totalAppliancePowerConsumption);
+        setDemandLabel();
+    }
+
+    private void setDemandLabel() {
         HashMap<String, Label> demandHM = mapsInstance.getDemandGenLabel();
         Label demandRate = demandHM.get("demandRate");
         double demandLevel = powerInstance.getDemand();

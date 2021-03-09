@@ -70,6 +70,7 @@ public class PowerGenAgent extends Agent {
         powerInstance.subtractGridMax(maxCapacity);
         powerInstance.subtractPowerLevel(holdCapacity);
         powerInstance.subtractGenRate(toAdd);
+        setGenRateLabel();
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {
@@ -132,6 +133,10 @@ public class PowerGenAgent extends Agent {
         HashMap<String, Label> lm = mapsInstance.getAgentLabelMap(this.getLocalName());
         Map.Entry<String, Label> labelEntry = lm.entrySet().iterator().next();
         agentLabel = labelEntry.getValue();
+        setGenRateLabel();
+    }
+
+    private void setGenRateLabel() {
         HashMap<String, Label> genHM = mapsInstance.getDemandGenLabel();
         Label genRate = genHM.get("genRate");
         double genLevel = powerInstance.getGenRate();
