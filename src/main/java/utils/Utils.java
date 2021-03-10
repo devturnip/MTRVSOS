@@ -306,6 +306,13 @@ public class Utils {
                 sender.send(msg);
                 //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName());
                 break;
+            case "REQUEST":
+                msg = new ACLMessage(ACLMessage.REQUEST);
+                msg.addReceiver(recipient);
+                msg.setContent(message);
+                sender.send(msg);
+                //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName());
+                break;
             case "":
                 LOGGER.warn("ACLType invalid/missing. Please enter correct type.");
                 LOGGER.warn("See jade documentation on ACLMessage FIPA Performative types.");
