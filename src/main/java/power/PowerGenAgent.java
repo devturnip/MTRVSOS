@@ -350,7 +350,6 @@ public class PowerGenAgent extends Agent {
                             reply_incr.setContent("INCR_ACCEPTED");
                             send(reply_incr);
                             LOGGER.info("INCR_ACCEPTED");
-                            setGenRateLabel();
                         } else {
                             reply_incr.setContent("INCR_REJECTED");
                             send(reply_incr);
@@ -370,13 +369,11 @@ public class PowerGenAgent extends Agent {
                             reply_decr.setContent("DECR_ACCEPTED");
                             send(reply_decr);
                             LOGGER.info("DECR_ACCEPTED");
-                            setGenRateLabel();
                         } else {
                             reply_decr.setContent("DECR_REJECTED");
                             send(reply_decr);
                             LOGGER.info("DECR_REJECTED");
                         }
-                        LOGGER.info(contents + " toAdd:" + toAdd);
                         break;
                     case "PAUSE":
                         pauseAgent = true;

@@ -155,6 +155,10 @@ public class HelloFX extends Application {
                     double gdRate = (demandRate1 / genRate1) * 100;
                     if (Double.isFinite(gdRate)) {
                         BigDecimal bigDecimal = new BigDecimal(gdRate).setScale(2, RoundingMode.HALF_UP);
+                        BigDecimal bigDecimal1 = new BigDecimal(genRate1).setScale(2, RoundingMode.HALF_UP);
+                        BigDecimal bigDecimal2 = new BigDecimal(demandRate1).setScale(2, RoundingMode.HALF_UP);
+                        genRate.setText("G (kwh/s): " + bigDecimal1.doubleValue());
+                        demandRate.setText("D (kwh/s): " + bigDecimal2.doubleValue());
                         utilisationRate.setText("D/G: " + bigDecimal.doubleValue() + "%");
                     }
                 };
