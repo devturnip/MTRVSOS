@@ -199,6 +199,7 @@ public class PowerGenAgent extends Agent {
                     if (!isPaused) {
                         if (holdCapacity < maxCapacity) {
                             isOn = true;
+                            isPaused = false;
 
                             //code to prevent power exceeding maxcapacity
                             if (tempHolder >= maxCapacity) {

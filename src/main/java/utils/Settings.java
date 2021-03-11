@@ -24,7 +24,7 @@ public class Settings {
 
     //Agent Flags
     private int numPowerAgents = 2;
-    private int numPowerDisAgents = 1;
+    private int numPowerDisAgents = 2;
     private int numSmartHomeAgents = 10;
     private int numEVAgents = 1;
 
