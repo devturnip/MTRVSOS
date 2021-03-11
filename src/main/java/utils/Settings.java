@@ -7,7 +7,8 @@ public class Settings {
     //Rate Flags
     private int rateSecsPowerGen = 1000;
     private int rateSecsSmartHome = 1000;
-    private int houseUnit = 100;
+    private int rateSecsEV = 2000;
+    private int houseUnit = 1000;
     private int secondsToRun = 600;
 
     //UI Size
@@ -23,9 +24,16 @@ public class Settings {
 
     //Agent Flags
     private int numPowerAgents = 2;
-    private int numPowerDisAgents = 5;
-    private int numSmartHomeAgents = 5;
-    private int numEVAgents = 2;
+    private int numPowerDisAgents = 1;
+    private int numSmartHomeAgents = 10;
+    private int numEVAgents = 1;
+
+    private double InitCapacityFactor = 0.70;
+
+    //SoSAgent Management Flags
+    private double preferredUtilisationRate = 85;
+    private double preferredIncrement = 0.02;
+    private double powerUtilisationRate = 90;
 
     //other
     private String PORT_NAME = "7778";
@@ -39,14 +47,18 @@ public class Settings {
     public double getCanvasY(){return canvasY;}
     public int getSecondsToRun(){return secondsToRun;}
 
+    public double getPowerUtilisationRate() { return powerUtilisationRate;}
+    public double getPreferredIncrement() { return preferredIncrement;}
+    public double getPreferredUtilisationRate() { return preferredUtilisationRate;}
+
+    public double getInitCapacityFactor() { return InitCapacityFactor; }
+
     public boolean getSimulationState() {
         return pauseSimulation;
     }
-
     public void setPauseSimulation(boolean state) {
         pauseSimulation = state;
     }
-
     public int getSimCheckRate(){return simCheckRate;}
 
     //UI

@@ -6,6 +6,7 @@ import jade.core.Agent;
 import jade.core.behaviours.*;
 import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
+import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
@@ -15,6 +16,8 @@ import utils.Settings;
 import utils.Utils;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 public class PowerGenAgent extends Agent {
@@ -27,14 +30,15 @@ public class PowerGenAgent extends Agent {
     private boolean isPaused = false;
     private double maxCapacity = 0;
     private double holdCapacity = 0;
-    //toAdd needs to be sampled from a probability distribution of actual power grid rates.
-    //private int toAdd = new Random().ints(1000, 10000).findFirst().getAsInt();
+    //toAdd is sampled from a probability distribution of actual power grid rates.
     private int toAdd = 0;
+    private int maxGenCapacity = 0;
     private int rateSecs = settingsInstance.getRateSecsPowerGen();
     private double agent_X = 0;
     private double agent_Y = 0;
     private ImageView agentImageView;
     private Label agentLabel;
+    private double capacityFactor = settingsInstance.getInitCapacityFactor();
 
     private Utils utility = new Utils();
     private Power powerInstance = Power.getPowerInstance();
@@ -66,6 +70,8 @@ public class PowerGenAgent extends Agent {
         LOGGER.info(getLocalName() + " takedown. Killing...");
         powerInstance.subtractGridMax(maxCapacity);
         powerInstance.subtractPowerLevel(holdCapacity);
+        powerInstance.subtractGenRate(toAdd);
+        setGenRateLabel();
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {
@@ -108,7 +114,9 @@ public class PowerGenAgent extends Agent {
         try {
             maxCapacity = utility.getStorageCapacity();
             powerInstance.addGridMax(maxCapacity);
-            toAdd = (int) utility.getPowerGenRate()*1000; //original vals are in mwh, convert to kwh;
+            maxGenCapacity = (int) (utility.getPowerGenRate()*1000);
+            toAdd = (int) (maxGenCapacity*capacityFactor); //original vals are in mwh, convert to kwh;
+            powerInstance.addGenRate(toAdd);
             LOGGER.debug("Randomised: " + String.valueOf(toAdd));
         } catch (IOException | CsvValidationException e) {
             e.printStackTrace();
@@ -124,10 +132,23 @@ public class PowerGenAgent extends Agent {
         agent_X = iv.getX();
         agent_Y = iv.getY();
         LOGGER.debug("THIS:" + this.getLocalName() + " agent:" + agentName + " X:" + agent_X + " Y:" + agent_Y);
-
         HashMap<String, Label> lm = mapsInstance.getAgentLabelMap(this.getLocalName());
         Map.Entry<String, Label> labelEntry = lm.entrySet().iterator().next();
         agentLabel = labelEntry.getValue();
+        setGenRateLabel();
+    }
+
+    private void setGenRateLabel() {
+        HashMap<String, Label> genHM = mapsInstance.getDemandGenLabel();
+        Label genRate = genHM.get("genRate");
+        double genLevel = powerInstance.getGenRate();
+        BigDecimal bd = new BigDecimal(genLevel).setScale(2, RoundingMode.HALF_UP);
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                genRate.setText("G (kwh/s): " + bd.doubleValue());
+            }
+        });
     }
 
     private class GeneratePower extends OneShotBehaviour {
@@ -311,6 +332,49 @@ public class PowerGenAgent extends Agent {
             if (msg != null) {
                 String contents = msg.getContent();
                 switch (contents) {
+                    case "GENRATE_QUERY":
+                        ACLMessage reply_query = msg.createReply();
+                        reply_query.setContent("max:" + maxGenCapacity + " current:" + toAdd + " capacity_factor:" + capacityFactor);
+                        send(reply_query);
+                        break;
+                    case "GENRATE_INCR":
+                        double to_inc = Double.valueOf(msg.getAllUserDefinedParameters().get("toAdd").toString());
+                        double temp_cf_i = capacityFactor + to_inc;
+                        ACLMessage reply_incr = msg.createReply();
+                        if (temp_cf_i > 0.0 && temp_cf_i < 1.0) {
+                            capacityFactor = temp_cf_i;
+                            int og_toAdd = toAdd;
+                            powerInstance.subtractGenRate(og_toAdd);
+                            toAdd = (int) (maxGenCapacity*capacityFactor);
+                            powerInstance.addGenRate(toAdd);
+                            reply_incr.setContent("INCR_ACCEPTED");
+                            send(reply_incr);
+                            LOGGER.info("INCR_ACCEPTED");
+                        } else {
+                            reply_incr.setContent("INCR_REJECTED");
+                            send(reply_incr);
+                            LOGGER.info("INCR_REJECTED");
+                        }
+                        break;
+                    case "GENRATE_DECR":
+                        double to_dec = Double.valueOf(msg.getAllUserDefinedParameters().get("toAdd").toString());
+                        double temp_cf_d = capacityFactor - to_dec;
+                        ACLMessage reply_decr = msg.createReply();
+                        if (temp_cf_d > 0.0 && temp_cf_d < 1.0) {
+                            capacityFactor = temp_cf_d;
+                            int og_toDec = toAdd;
+                            powerInstance.subtractGenRate(og_toDec);
+                            toAdd = (int) (maxGenCapacity*capacityFactor);
+                            powerInstance.addGenRate(toAdd);
+                            reply_decr.setContent("DECR_ACCEPTED");
+                            send(reply_decr);
+                            LOGGER.info("DECR_ACCEPTED");
+                        } else {
+                            reply_decr.setContent("DECR_REJECTED");
+                            send(reply_decr);
+                            LOGGER.info("DECR_REJECTED");
+                        }
+                        break;
                     case "PAUSE":
                         pauseAgent = true;
                         break;

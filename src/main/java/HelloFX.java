@@ -6,7 +6,6 @@ import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.ControllerException;
 import jade.wrapper.StaleProxyException;
-import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -124,7 +123,7 @@ public class HelloFX extends Application {
         };
 
         final ProgressBar progressBar = new ProgressBar();
-        progressBar.setPrefSize(600,15);
+        progressBar.setPrefSize(400,15);
         Label label = new Label();
         label.setGraphic(progressBar);
         label.setText("Power Levels");
@@ -141,12 +140,45 @@ public class HelloFX extends Application {
             }
         });
 
+        Label genRate = new Label("G (kwh/s): 0");
+        Label demandRate = new Label("D (kwh/s): 0");
+        Label utilisationRate = new Label("G/D: 0%");
+
+        mapsInstance.mapDemandGenLabel("genRate", genRate);
+        mapsInstance.mapDemandGenLabel("demandRate", demandRate);
+
+        Thread updateGD = new Thread(() -> {
+            while (true) {
+                Runnable updater = () -> {
+                    double demandRate1 = powerInstance.getDemand();
+                    double genRate1 = powerInstance.getGenRate();
+                    double gdRate = (demandRate1 / genRate1) * 100;
+                    if (Double.isFinite(gdRate)) {
+                        BigDecimal bigDecimal = new BigDecimal(gdRate).setScale(2, RoundingMode.HALF_UP);
+                        BigDecimal bigDecimal1 = new BigDecimal(genRate1).setScale(2, RoundingMode.HALF_UP);
+                        BigDecimal bigDecimal2 = new BigDecimal(demandRate1).setScale(2, RoundingMode.HALF_UP);
+                        genRate.setText("G (kwh/s): " + bigDecimal1.doubleValue());
+                        demandRate.setText("D (kwh/s): " + bigDecimal2.doubleValue());
+                        utilisationRate.setText("D/G: " + bigDecimal.doubleValue() + "%");
+                    }
+                };
+                Platform.runLater(updater);
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        updateGD.start();
+
+
         HBox hbox = new HBox();
         hbox.setPadding(new Insets(15,12,15,12));
         hbox.setSpacing(10);
         hbox.setStyle("-fx-background-color: #B0C4DE;");
-        hbox.setAlignment(Pos.BASELINE_CENTER);
-        hbox.getChildren().addAll(label, progressvalues);
+        hbox.setAlignment(Pos.BASELINE_LEFT);
+        hbox.getChildren().addAll(label, progressvalues, genRate, demandRate, utilisationRate);
 
         VBox vBox = new VBox();
         Button pauseButton = new Button();
