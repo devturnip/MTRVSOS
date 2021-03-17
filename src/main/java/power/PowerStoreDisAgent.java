@@ -1,7 +1,5 @@
 package power;
 
-import com.opencsv.exceptions.CsvValidationException;
-import com.sun.javafx.geom.Rectangle;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.*;
@@ -15,7 +13,6 @@ import utils.Maps;
 import utils.Settings;
 import utils.Utils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
