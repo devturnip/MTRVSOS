@@ -1,6 +1,8 @@
 .idea/*
 target/*
+!target/*-shaded.jar
 *.DS_store
+dependency-reduced-pom.xml
 
 # jade stuff
 APDescription.txt
