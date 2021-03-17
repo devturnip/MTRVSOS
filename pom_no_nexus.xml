@@ -101,6 +101,8 @@
             <groupId>com.tilab.jade</groupId>
             <artifactId>jade</artifactId>
             <version>4.5.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/JADE-all-4.5.0/jade/lib/jade.jar</systemPath>
         </dependency>
     </dependencies>
 </project>

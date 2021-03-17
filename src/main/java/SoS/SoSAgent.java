@@ -38,7 +38,7 @@ public class SoSAgent extends Agent {
     @Override
     protected void setup() {
         LOGGER.info(getLocalName() + " started.");
-        addBehaviour(new ContactPower(this,10000, "START"));
+        addBehaviour(new ContactPower(this,12000, "START"));
         addBehaviour(new ReceiveMessage());
         addBehaviour(new CheckSimulationState(this, settingsInstance.getSimCheckRate()));
         //addBehaviour(new ContactPower(this,20000, "STOP"));
