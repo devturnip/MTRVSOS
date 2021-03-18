@@ -6,11 +6,46 @@ In this project, I simulate  a smart grid System of Systems (SoS) using agent ba
 
 Each constituent system in the smart grid SoS is represented by an agent in the Jade framework.
 
-## How to run
+## Requirements
+- Project built using Java AdoptOpenJDK 15.0.2
+- Intellij (Java) Project Language Level: 11
+- See pom.xml for dependencies.
+
+## Project Setup (Maven)
+### Background
+- Although Jade is hosted on Maven by [Tilab](https://jade.tilab.com/developers/maven/), during pom installation, the jade artifact cannot be successfully obtained.
+- For maven-shade-plugin to succesfully package a shaded jar, all dependencies need to be available on maven.
+
+### Workaround 1: Development only, not packaging as Shaded Jar
+1. Rename pom_no_nexus.xml to pom.xml and use Maven to install all dependencies.
+2. Make sure that resources folder is marked as project resource root in Intellij.
+3. Run SmartGridRunner main to start the application. (intellij run config also included in project.)
+
+### Workaround 2: Development and packaging (preferred method)
+#### Development
+- Run a local self hosted maven repository(nexus) using Docker.
+- [Instructions to run the docker image here, webconsole and admin login](https://hub.docker.com/r/sonatype/nexus3)
+- [Use the web console for nexus, login and upload jade as a maven artifact.](https://help.sonatype.com/repomanager3/user-interface/uploading-components)
+- Follow the naming convention during uploading as shown below:
+  
+      <groupId>com.tilab.jade</groupId>
+      <artifactId>jade</artifactId>
+      <version>4.5.0</version>
+- Use the settings.xml included in this project and modify (profiles, mirrors) if necessary.
+- Use pom.xml and install the dependencies using maven.
+  1. Maven should detect your docker instance of the nexus repo and download the uploaded jade artifact successfully.
+- Run SmartGridRunner main to start the application. (intellij run config also included in project.)
+#### Packaging the application as a fat jar.
+- Packaging is done using the configuration for maven-shade-plugin in pom.xml.
+- Use maven to run the maven package lifecyle and a snapshot.jar should be generated in target.
+- Run the snapshot jar using java -jar. (Make sure that Java has the same version as this application)
+
+## How to setup and run (without maven)
 1. In your IDE (Intellij), add all jar files in "JADE-all-4.5.0" and "javafx-sdk-15.0.1"
 2. Add everything in "lib" to project library.
-3. Run config for intellij:
+3. Run config for intellij (old):
     ![image](notes/run-config.jpg)
+3. Run SmartGridRunner main (current)
 
 ## Changeable Variables Description
 Found in Settings.java
@@ -37,6 +72,13 @@ Found in Settings.java
     private int numPowerDisAgents = 5; //number of power distribution/storage agents
     private int numSmartHomeAgents = 5; //number of smart home agents
     private int numEVAgents = 2; //number of ev agents
+
+    private double InitCapacityFactor = 0.70; //capacity factor for power agents
+
+    //SoSAgent Management Flags
+    private double preferredUtilisationRate = 85; //target utilisation level
+    private double preferredIncrement = 0.02; //increments to hit target utilisation level
+    private double powerUtilisationRate = 90; //total power levels % to wait until utilisation algo kicks in
 
     //other
     private String PORT_NAME = "7778"; //port used
@@ -89,8 +131,9 @@ Found in Settings.java
 - Agents will behave smartly (to some extent) when agents are killed.
 
 ### Sos Agent
-- Only wakes power agents for now
-- TODO: Calculate consumption vs generation and manage smart grid's efficiency rate as a whole.
+- Wakes power agents for now
+- Calculate consumption vs generation and manage smart grid's efficiency rate as a whole
+- Done by contacting Power Gen Agents to adjust capacity factor for each agent.
 
 ## Background
 ### [System of Systems](https://www.sebokwiki.org/wiki/Systems_of_Systems_(SoS))
