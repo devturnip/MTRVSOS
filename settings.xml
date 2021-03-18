@@ -153,6 +153,12 @@ under the License.
      | site. The mirror site will be the preferred server for that repository.
      |-->
     <mirrors>
+        <mirror>
+            <id>central</id>
+            <name>central</name>
+            <url>http://localhost:8081/repository/maven-releases/</url>
+            <mirrorOf>*</mirrorOf>
+        </mirror>
         <!-- mirror
          | Specifies a repository mirror site to use instead of a given repository.
          | The repository that this mirror serves has an ID that matches the
@@ -197,6 +203,28 @@ under the License.
      |-->
 
     <profiles>
+        <profile>
+            <id>some_profile_name</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <repositories>
+                <repository>
+                    <id>maven-group</id>
+                    <url>http://localhost:8081/repository/maven-releases/</url>
+                </repository>
+                <repository>
+                    <id>mvnrepository</id>
+                    <url>https://repo1.maven.org/maven2</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                </repository>
+            </repositories>
+        </profile>
         <!-- profile
          | Specifies a set of introductions to the build process, to be activated
          | using one or more of the mechanisms described above. For inheritance
@@ -212,18 +240,24 @@ under the License.
          |
          | This profile example uses the JDK version to trigger activation, and
          | provides a JDK-specific repo.
-       -->
         <profile>
+          <id>jdk-1.4</id>
+
+          <activation>
+            <jdk>1.4</jdk>
+          </activation>
 
           <repositories>
-              <repository>
-                  <id>tilab</id>
-                  <name>jade repo</name>
-                  <url>https://jade.tilab.com/maven/</url>
-              </repository>
+            <repository>
+              <id>jdk14</id>
+              <name>Repository for JDK 1.4 builds</name>
+              <url>http://www.myhost.com/maven/jdk14</url>
+              <layout>default</layout>
+              <snapshotPolicy>always</snapshotPolicy>
+            </repository>
           </repositories>
-
         </profile>
+        -->
 
         <!--
          | Here is another profile, activated by the system property 'target-env'
