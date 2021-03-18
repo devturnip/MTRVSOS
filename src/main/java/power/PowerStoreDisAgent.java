@@ -143,7 +143,7 @@ public class PowerStoreDisAgent extends Agent {
                     double addTo = Double.parseDouble(toAdd);
                     double temp = holdCapacity + addTo;
                     if (temp >= maxCapacity) {
-                        addTo = temp - maxCapacity;
+                        addTo = maxCapacity - holdCapacity;
                         powerInstance.addPowerLevel(addTo);
                         holdCapacity = holdCapacity + addTo;
                     } else {

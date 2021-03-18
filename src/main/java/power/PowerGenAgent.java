@@ -175,10 +175,6 @@ public class PowerGenAgent extends Agent {
             initPosition();
             nearestNeighbour = utility.getNearest(this.myAgent, agent_X, agent_Y, "Power-Storage_Distribution");
             nearestNeighbours = utility.getNearestObjectsList(this.myAgent, agent_X, agent_Y, "Power-Storage_Distribution");
-//            Iterator iterator = nearestNeighbours.entrySet().iterator();
-//            while(iterator.hasNext()) {
-//                System.out.println("INIT SET:" + iterator.next());
-//            }
         }
     }
 
@@ -200,18 +196,20 @@ public class PowerGenAgent extends Agent {
                         if (holdCapacity < maxCapacity) {
                             isOn = true;
                             isPaused = false;
+                            powerInstance.subtractGenRate(toAdd);
+                            powerInstance.addGenRate(toAdd);
 
                             //code to prevent power exceeding maxcapacity
                             if (tempHolder >= maxCapacity) {
-                                addTo = tempHolder - maxCapacity;
+                                addTo = maxCapacity - holdCapacity;
                                 powerInstance.addPowerLevel(addTo);
                                 holdCapacity = holdCapacity + addTo;
-                            } else {
-                                powerInstance.addPowerLevel(addTo);
-                                holdCapacity = holdCapacity + addTo;
+                            } else if (tempHolder < maxCapacity) {
+                                powerInstance.addPowerLevel(toAdd);
+                                holdCapacity = holdCapacity + toAdd;
                             }
 
-                            LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                            LOGGER.info(myAgent.getLocalName() + " total power levels1: " + String.valueOf(holdCapacity));
                             if (currentColour != GREEN) {
                                 try {
                                     mapsInstance.changeColor(agentImageView, "GREEN");
@@ -221,8 +219,10 @@ public class PowerGenAgent extends Agent {
                                 currentColour = GREEN;
                             }
                         } else if (holdCapacity >= maxCapacity) {
-                            LOGGER.info("Max capacity at " + maxCapacity + " of " + getName() + " . Paused generation.");
+                            LOGGER.info("Max capacity at " + holdCapacity + " of " + getName() + " . Paused generation.");
                             isPaused = true;
+                            powerInstance.subtractGenRate(toAdd);
+
                             if (currentColour != BLUE) {
                                 try {
                                     mapsInstance.changeColor(agentImageView, "BLUE");
@@ -237,7 +237,7 @@ public class PowerGenAgent extends Agent {
 
                         //code to prevent power exceeding maxcapacity
                         if (tempHolder > maxCapacity) {
-                            addTo = tempHolder - maxCapacity;
+                            addTo = maxCapacity - holdCapacity;
                             powerInstance.addPowerLevel(addTo);
                             holdCapacity = holdCapacity + addTo;
                         } else {
@@ -248,7 +248,7 @@ public class PowerGenAgent extends Agent {
                             isPaused = true;
                         }
 
-                        LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                        LOGGER.info(myAgent.getLocalName() + " total power levels2: " + String.valueOf(holdCapacity));
                         if (currentColour != GREEN) {
                             try {
                                 mapsInstance.changeColor(agentImageView, "GREEN");
@@ -268,6 +268,8 @@ public class PowerGenAgent extends Agent {
                                     //System.out.println(myAgent.getLocalName()+ " transferring to nearest neighbour: " + nearestNeighbour.getKey().getLocalName());
                                     HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toAdd", String.valueOf(toAdd));
                                     utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "ADD", "REQUEST");
+                                    powerInstance.subtractGenRate(toAdd);
+                                    powerInstance.addGenRate(toAdd);
 
                                 } else if (smsg.getContent().equals("REJECT_STORE")) {
 //                                System.out.println(myAgent.getLocalName() + ": REJECT_STORE :" + countCFP);
