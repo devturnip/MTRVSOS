@@ -11,6 +11,12 @@ Each constituent system in the smart grid SoS is represented by an agent in the 
 - Intellij (Java) Project Language Level: 11
 - See pom.xml for dependencies.
 
+## To Run
+- Ensure that you have >= Java 11 installed.
+- Run the shaded.jar file located in the folder named target.
+
+        java -jar MTRVSOS-1.0-SNAPSHOT-shaded.jar
+
 ## Project Setup (Maven)
 ### Background
 - Although Jade is hosted on Maven by [Tilab](https://jade.tilab.com/developers/maven/), during pom installation, the jade artifact cannot be successfully obtained.

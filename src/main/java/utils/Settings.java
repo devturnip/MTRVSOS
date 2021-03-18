@@ -23,9 +23,9 @@ public class Settings {
     private int simCheckRate = 200;
 
     //Agent Flags
-    private int numPowerAgents = 2;
-    private int numPowerDisAgents = 2;
-    private int numSmartHomeAgents = 10;
+    private int numPowerAgents = 1;
+    private int numPowerDisAgents = 1;
+    private int numSmartHomeAgents = 1;
     private int numEVAgents = 1;
 
     private double InitCapacityFactor = 0.70;

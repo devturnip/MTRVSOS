@@ -72,7 +72,7 @@ public class Power {
 
     public void subtractGenRate(double value) {
         double temp = genRate - value;
-        if (temp < 0) {
+        if (temp <= 0) {
             genRate = 0;
         } else {
             genRate = genRate - value;
