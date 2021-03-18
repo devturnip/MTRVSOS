@@ -205,8 +205,8 @@ public class PowerGenAgent extends Agent {
                                 }
                                 currentColour = GREEN;
                             }
-                            powerInstance.subtractGenRate(toAdd);
-                            powerInstance.addGenRate(toAdd);
+//                            powerInstance.subtractGenRate(toAdd);
+//                            powerInstance.addGenRate(toAdd);
 
                             //code to pre vent power exceeding maxcapacity
                             if (tempHolder >= maxCapacity) {
@@ -230,8 +230,6 @@ public class PowerGenAgent extends Agent {
                         } else if (holdCapacity >= maxCapacity) {
                             LOGGER.info("Max capacity at " + holdCapacity + " of " + getName() + " . Paused generation.");
 
-                            powerInstance.subtractGenRate(toAdd);
-
                             if (currentColour != BLUE) {
                                 try {
                                     mapsInstance.changeColor(agentImageView, "BLUE");
@@ -252,8 +250,8 @@ public class PowerGenAgent extends Agent {
                                         //System.out.println(myAgent.getLocalName()+ " transferring to nearest neighbour: " + nearestNeighbour.getKey().getLocalName());
                                         HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toAdd", String.valueOf(toAdd));
                                         utility.sendMessageWithArgs(myAgent, currentNeighbour, arguments, "ADD", "REQUEST");
-                                        powerInstance.subtractGenRate(toAdd);
-                                        powerInstance.addGenRate(toAdd);
+//                                        powerInstance.subtractGenRate(toAdd);
+//                                        powerInstance.addGenRate(toAdd);
 
                                     } else if (smsg.getContent().equals("REJECT_STORE")) {
     //                                System.out.println(myAgent.getLocalName() + ": REJECT_STORE :" + countCFP);
