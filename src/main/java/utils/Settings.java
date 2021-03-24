@@ -39,6 +39,12 @@ public class Settings {
     private String PORT_NAME = "7778";
     private String HOSTNAME = "localhost";
 
+    //for facilitating test runs
+    public void setNumPowerAgents(int num){numPowerAgents=num;}
+    public void setNumPowerDisAgents(int num){numPowerDisAgents=num;}
+    public void setNumSmartHomeAgents(int num){numSmartHomeAgents=num;}
+    public void setNumEVAgents(int num){numEVAgents=num;}
+
     public static Settings getSettingsInstance(){return settingsInstance;}
     public int getRateSecsPowerGen(){return rateSecsPowerGen;}
     public int getRateSecsSmartHome(){return rateSecsSmartHome;}
