@@ -154,10 +154,16 @@ under the License.
      |-->
     <mirrors>
         <mirror>
-            <id>central</id>
-            <name>central</name>
+            <id>1</id>
+            <name>1</name>
             <url>http://localhost:8081/repository/maven-releases/</url>
             <mirrorOf>*</mirrorOf>
+        </mirror>
+        <mirror>
+            <id>central</id>
+            <name>central</name>
+            <url>https://repo1.maven.org/maven2/</url>
+            <mirrorOf>central</mirrorOf>
         </mirror>
         <!-- mirror
          | Specifies a repository mirror site to use instead of a given repository.
@@ -204,17 +210,13 @@ under the License.
 
     <profiles>
         <profile>
-            <id>some_profile_name</id>
+            <id>mtrvsos</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <repositories>
                 <repository>
-                    <id>maven-group</id>
-                    <url>http://localhost:8081/repository/maven-releases/</url>
-                </repository>
-                <repository>
-                    <id>mvnrepository</id>
+                    <id>mvn-repository</id>
                     <url>https://repo1.maven.org/maven2</url>
                     <snapshots>
                         <enabled>false</enabled>
@@ -222,6 +224,10 @@ under the License.
                     <releases>
                         <enabled>true</enabled>
                     </releases>
+                </repository>
+                <repository>
+                    <id>maven-group</id>
+                    <url>http://localhost:8081/repository/maven-releases/</url>
                 </repository>
             </repositories>
         </profile>

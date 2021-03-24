@@ -39,6 +39,10 @@ public class Settings {
     private String PORT_NAME = "7778";
     private String HOSTNAME = "localhost";
 
+    private boolean useElastic = false;
+    private String ELASTIC_HOST = "192.168.0.31";
+    private int ELASTIC_PORT = 9200;
+
     //for facilitating test runs
     public void setNumPowerAgents(int num){numPowerAgents=num;}
     public void setNumPowerDisAgents(int num){numPowerDisAgents=num;}
@@ -81,6 +85,14 @@ public class Settings {
     //other
     public String getPORT_NAME(){return PORT_NAME;}
     public String getHOSTNAME(){return HOSTNAME;}
+
+    public boolean getUseElastic(){return useElastic;}
+    public void setUseElastic(boolean elastic){useElastic=elastic;}
+
+    public String getELASTIC_HOST(){return ELASTIC_HOST;}
+    public int getELASTIC_PORT(){return ELASTIC_PORT;}
+    public void setELASTIC_HOST(String HOST){ELASTIC_HOST=HOST;}
+    public void setELASTIC_PORT(int PORT){ELASTIC_PORT=PORT;}
 
     public String printSettings() {
         StringBuilder sb = new StringBuilder();

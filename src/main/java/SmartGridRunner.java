@@ -2,6 +2,7 @@ import jade.Boot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.PowerStoreDisAgent;
+import utils.ElasticHelper;
 import utils.Settings;
 
 import java.util.ArrayList;
@@ -20,6 +21,8 @@ public class SmartGridRunner {
         param[ 6 ] = "0";
 
         Settings settingsInstance = Settings.getSettingsInstance();
+        ElasticHelper elasticHelperInstance = ElasticHelper.getElasticHelperInstance();
+
         ArrayList<String> parsed = new ArrayList<>();
 
         if(args.length > 0) {
@@ -53,8 +56,13 @@ public class SmartGridRunner {
             }
         }
 
+
+
         try {
             LOGGER.info(settingsInstance.printSettings());
+            if (elasticHelperInstance.initElasticClient(settingsInstance.getELASTIC_HOST(), settingsInstance.getELASTIC_PORT()) == true) {
+                settingsInstance.setUseElastic(true);
+            }
             Boot.main(param);
         } catch (Exception e) {
             e.printStackTrace();
