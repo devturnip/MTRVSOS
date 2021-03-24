@@ -4,6 +4,8 @@ import org.slf4j.LoggerFactory;
 import power.PowerStoreDisAgent;
 import utils.Settings;
 
+import java.util.ArrayList;
+
 public class SmartGridRunner {
     private static Logger LOGGER = LoggerFactory.getLogger(SmartGridRunner.class);
 
@@ -17,30 +19,42 @@ public class SmartGridRunner {
         param[ 5 ] = "-port";
         param[ 6 ] = "0";
 
+        Settings settingsInstance = Settings.getSettingsInstance();
+        ArrayList<String> parsed = new ArrayList<>();
+
         if(args.length > 0) {
-            Settings settingsInstance = Settings.getSettingsInstance();
             for (int i=0; i< args.length;i++){
                 String arguments = args[i];
-                switch (arguments){
-                    case "-p":
-                        settingsInstance.setNumPowerAgents(Integer.parseInt(args[i+1]));
-                        break;
-                    case "-pd":
-                        settingsInstance.setNumPowerDisAgents(Integer.parseInt(args[i+1]));
-                        break;
-                    case "-sh":
-                        settingsInstance.setNumSmartHomeAgents(Integer.parseInt(args[i+1]));
-                        break;
-                    case "-ev":
-                        settingsInstance.setNumEVAgents(Integer.parseInt(args[i+1]));
-                        break;
-                    default:
-                        LOGGER.warn("args not recognised.");
+                if (arguments.equals("-p")) {
+                    parsed.add(args[i]);
+                    parsed.add(args[i+1]);
+                    settingsInstance.setNumPowerAgents(Integer.parseInt(args[i + 1]));
+                } else if (arguments.equals("-pd")) {
+                    parsed.add(args[i]);
+                    parsed.add(args[i+1]);
+                    settingsInstance.setNumPowerDisAgents(Integer.parseInt(args[i + 1]));
+                } else if (arguments.equals("-sh")) {
+                    parsed.add(args[i]);
+                    parsed.add(args[i+1]);
+                    settingsInstance.setNumSmartHomeAgents(Integer.parseInt(args[i + 1]));
+                } else if (arguments.equals("-ev")) {
+                    parsed.add(args[i]);
+                    parsed.add(args[i+1]);
+                    settingsInstance.setNumEVAgents(Integer.parseInt(args[i + 1]));
+                } else if (arguments.equals("-rt")) {
+                    parsed.add(args[i]);
+                    parsed.add(args[i+1]);
+                    settingsInstance.setSecondsToRun(Integer.parseInt(args[i + 1]));
                 }
+            }
+
+            if (parsed.size() != args.length) {
+                LOGGER.warn("SOME ARGS NOT RECOGNISED!");
             }
         }
 
         try {
+            LOGGER.info(settingsInstance.printSettings());
             Boot.main(param);
         } catch (Exception e) {
             e.printStackTrace();
