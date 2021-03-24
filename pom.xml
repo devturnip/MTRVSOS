@@ -65,6 +65,16 @@
             <id>maven-group</id>
             <url>http://localhost:8081/repository/maven-releases/</url>
         </repository>
+        <repository>
+            <id>mvnrepository</id>
+            <url>https://repo1.maven.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
     </repositories>
     <dependencies>
         <dependency>
@@ -96,6 +106,11 @@
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
             <version>5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+            <version>7.12.0</version>
         </dependency>
         <dependency>
             <groupId>com.tilab.jade</groupId>

@@ -9,7 +9,7 @@ public class Settings {
     private int rateSecsSmartHome = 1000;
     private int rateSecsEV = 2000;
     private int houseUnit = 1000;
-    private int secondsToRun = 600;
+    private int secondsToRun = 300;
 
     //UI Size
     private int multiplier = 2;
@@ -38,6 +38,17 @@ public class Settings {
     //other
     private String PORT_NAME = "7778";
     private String HOSTNAME = "localhost";
+
+    private boolean useElastic = false;
+    private String ELASTIC_HOST = "192.168.0.31";
+    private int ELASTIC_PORT = 9200;
+
+    //for facilitating test runs
+    public void setNumPowerAgents(int num){numPowerAgents=num;}
+    public void setNumPowerDisAgents(int num){numPowerDisAgents=num;}
+    public void setNumSmartHomeAgents(int num){numSmartHomeAgents=num;}
+    public void setNumEVAgents(int num){numEVAgents=num;}
+    public void setSecondsToRun(int num){secondsToRun=num;}
 
     public static Settings getSettingsInstance(){return settingsInstance;}
     public int getRateSecsPowerGen(){return rateSecsPowerGen;}
@@ -74,4 +85,32 @@ public class Settings {
     //other
     public String getPORT_NAME(){return PORT_NAME;}
     public String getHOSTNAME(){return HOSTNAME;}
+
+    public boolean getUseElastic(){return useElastic;}
+    public void setUseElastic(boolean elastic){useElastic=elastic;}
+
+    public String getELASTIC_HOST(){return ELASTIC_HOST;}
+    public int getELASTIC_PORT(){return ELASTIC_PORT;}
+    public void setELASTIC_HOST(String HOST){ELASTIC_HOST=HOST;}
+    public void setELASTIC_PORT(int PORT){ELASTIC_PORT=PORT;}
+
+    public String printSettings() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("==============================\n");
+        sb.append("starting program with settings:\n");
+        sb.append("-----AGENT FLAGS-----");
+        sb.append("\nNum of Power_Agents: " + getNumPowerAgents());
+        sb.append("\nNum of Power_Distribution_Agents: " + getNumPowerDisAgents());
+        sb.append("\nNum of Smart_Home_Agent: " + getNumSmartHomeAgents());
+        sb.append("\nNum of EV_Agents: " + getNumEVAgents());
+        sb.append("\nTick rate (ms) of Power_Agents: " + getRateSecsPowerGen());
+        sb.append("\nTick rate (ms) of Smart_Home_Agents: " + getRateSecsSmartHome());
+        sb.append("\nStart after x % power levels of SoS_Agent: " + getPowerUtilisationRate());
+        sb.append("\n% to keep generation/demand of SoS_Agent: " + getPreferredUtilisationRate());
+        sb.append("\n% of incr/decr level of SoS_Agent: " + getPreferredIncrement());
+        sb.append("\n-----OTHERS-----");
+        sb.append("\nTime (s) for simulator to run: " + getSecondsToRun());
+        sb.append("\n==============================");
+        return sb.toString();
+    }
 }
