@@ -16,6 +16,14 @@ Each constituent system in the smart grid SoS is represented by an agent in the 
 - Run the shaded.jar file located in the folder named target.
 
         java -jar MTRVSOS-1.0-SNAPSHOT-shaded.jar
+  
+- CMD FLAGS:
+    
+        -p (number of power agents)
+        -pd (number of power distribution agents)
+        -ev (number of electronic vehicles)
+        -sh (number of smart homes to appear on ui)
+        -rt (running time in seconds)
 
 ## Project Setup (Maven)
 ### Background
