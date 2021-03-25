@@ -11,6 +11,7 @@ import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.ElasticHelper;
 import utils.Maps;
 import utils.Settings;
 import utils.Utils;
@@ -63,6 +64,7 @@ public class PowerGenAgent extends Agent {
 
     //logs
     private static Logger LOGGER = LoggerFactory.getLogger(PowerGenAgent.class);
+    private static ElasticHelper elasticHelper = ElasticHelper.getElasticHelperInstance();
 
     @Override
     protected void takeDown() {
@@ -87,8 +89,10 @@ public class PowerGenAgent extends Agent {
 
     protected void setup() {
         determineCapacity();
-        LOGGER.info(getAID().getLocalName() + " started with capacity of " + maxCapacity + " and genrate of "
-         + toAdd + "/" + rateSecs + " ms.");
+        String message = getAID().getLocalName() + " started with capacity of " + maxCapacity + " and genrate of "
+                + toAdd + "/" + rateSecs + " ms.";
+        LOGGER.info(message);
+        elasticHelper.indexLogs(this, message);
 
         Utils utils = new Utils();
         utils.registerServices(this, "Power-Generation");
