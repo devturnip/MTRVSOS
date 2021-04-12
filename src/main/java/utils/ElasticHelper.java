@@ -25,7 +25,10 @@ public class ElasticHelper {
 
     private RestHighLevelClient elasticClient;
 
+    private String INDEXNAME = settingsInstance.getINDEXNAME();
+
     public boolean initElasticClient(String HOST, int PORT) throws IOException {
+        INDEXNAME = settingsInstance.getINDEXNAME();
         elasticClient = new RestHighLevelClient(
                 RestClient.builder(
                         new HttpHost(HOST, PORT, "http")
@@ -66,7 +69,7 @@ public class ElasticHelper {
                     xContentBuilder.field("message", logs);
                 }
                 xContentBuilder.endObject();
-                IndexRequest indexRequest = new IndexRequest("smartgridsos").source(xContentBuilder);
+                IndexRequest indexRequest = new IndexRequest(INDEXNAME).source(xContentBuilder);
 
                 ActionListener listener = new ActionListener<IndexResponse>() {
                     @Override
@@ -107,7 +110,7 @@ public class ElasticHelper {
 
                 }
                 xContentBuilder.endObject();
-                IndexRequest indexRequest = new IndexRequest("smartgridsos").source(xContentBuilder);
+                IndexRequest indexRequest = new IndexRequest(INDEXNAME).source(xContentBuilder);
 
                 ActionListener listener = new ActionListener<IndexResponse>() {
                     @Override
