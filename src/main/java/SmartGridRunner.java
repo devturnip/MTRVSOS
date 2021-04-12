@@ -5,7 +5,9 @@ import power.PowerStoreDisAgent;
 import utils.ElasticHelper;
 import utils.Settings;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class SmartGridRunner {
     private static Logger LOGGER = LoggerFactory.getLogger(SmartGridRunner.class);
@@ -48,6 +50,10 @@ public class SmartGridRunner {
                     parsed.add(args[i]);
                     parsed.add(args[i+1]);
                     settingsInstance.setSecondsToRun(Integer.parseInt(args[i + 1]));
+                } else if (arguments.equals("-testrun")) {
+                    parsed.add((args[i]));
+                    String index_name = "smartgridsos-" + LocalDateTime.now();
+                    settingsInstance.setINDEXNAME(index_name.replaceAll(":", "-").toLowerCase(Locale.ROOT));
                 }
             }
 
