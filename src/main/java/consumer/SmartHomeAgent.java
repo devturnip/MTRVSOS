@@ -14,6 +14,7 @@ import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.Power;
+import utils.ElasticHelper;
 import utils.Maps;
 import utils.Settings;
 import utils.Utils;
@@ -56,12 +57,19 @@ public class SmartHomeAgent extends Agent {
 
     //logs
     private static Logger LOGGER = LoggerFactory.getLogger(SmartHomeAgent.class);
+    private static ElasticHelper elasticHelper = ElasticHelper.getElasticHelperInstance();
 
     @Override
     protected void setup() {
         super.setup();
         initAppliances();
         LOGGER.info(getLocalName()+ "'s total appliances power consumption: "+ totalAppliancePowerConsumption);
+
+        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+        logArgs.put("action", "smarthome.init");
+        logArgs.put("power_consumption", String.valueOf(totalAppliancePowerConsumption));
+        logArgs.put("consumption_rate", String.valueOf(rateSecs));
+        elasticHelper.indexLogs(this, logArgs);
 
         InitPosition initPosition = new InitPosition(this, 2000);
         ReceiveMessage receiveMessage = new ReceiveMessage();
@@ -82,12 +90,18 @@ public class SmartHomeAgent extends Agent {
         super.takeDown();
         powerInstance.subtractDemand(totalAppliancePowerConsumption);
         setDemandLabel();
-        LOGGER.info(getLocalName() + " takedown. Killing...");
+        String message = getLocalName() + " takedown. Killing...";
+        LOGGER.info(message);
+        elasticHelper.indexLogs(this, message);
+
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {
+            String log= "";
             for (Behaviour b: behaviourList){
-                LOGGER.info("Removing behaviour(s): "+b);
+                log = getLocalName() + " Removing behaviour(s): "+ b.getBehaviourName();
+                LOGGER.info(log);
+                elasticHelper.indexLogs(this, log);
                 removeBehaviour(b);
             }
         }
@@ -245,6 +259,13 @@ public class SmartHomeAgent extends Agent {
                             }
                             currentColour = ORANGE;
                         }
+
+                        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                        logArgs.put("action", "smarthome.power_receive");
+                        logArgs.put("receive_power", "false");
+                        logArgs.put("rejected_by", msg.getSender().getLocalName());
+                        elasticHelper.indexLogs(myAgent, logArgs);
+
                         //get next neighbour in list to send
                         HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toConsume", String.valueOf(totalAppliancePowerConsumption));
                         String[] servicesArgs = new String[] {"Power-Storage_Distribution", "Power-Generation"};

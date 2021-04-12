@@ -86,7 +86,7 @@ public class ElasticHelper {
                 e.printStackTrace();
             }
         } else {
-            LOGGER.info("Attemped to use elastic logging. Not using elastic logging.");
+            LOGGER.info("Attempted to use elastic logging. Not using elastic logging.");
         }
 
     }
@@ -112,7 +112,7 @@ public class ElasticHelper {
                 ActionListener listener = new ActionListener<IndexResponse>() {
                     @Override
                     public void onResponse(IndexResponse indexResponse) {
-                        LOGGER.info("Successfully logged msg to elasticsearch");
+                        LOGGER.info(agent.getLocalName() + " logged to elasticsearch with arguments: " + arguments.toString());
                     }
 
                     @Override
@@ -128,7 +128,7 @@ public class ElasticHelper {
                 e.printStackTrace();
             }
         } else {
-            LOGGER.info("Attemped to use elastic logging. Not using elastic logging.");
+            LOGGER.info("Attempted to use elastic logging. Not using elastic logging.");
         }
 
     }
