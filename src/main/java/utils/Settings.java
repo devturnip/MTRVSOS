@@ -9,7 +9,7 @@ public class Settings {
     private int rateSecsSmartHome = 1000;
     private int rateSecsEV = 2000;
     private int houseUnit = 1000;
-    private int secondsToRun = 300;
+    private int secondsToRun = 600;
 
     //UI Size
     private int multiplier = 2;

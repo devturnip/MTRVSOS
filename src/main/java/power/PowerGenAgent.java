@@ -11,6 +11,7 @@ import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.ElasticHelper;
 import utils.Maps;
 import utils.Settings;
 import utils.Utils;
@@ -63,11 +64,15 @@ public class PowerGenAgent extends Agent {
 
     //logs
     private static Logger LOGGER = LoggerFactory.getLogger(PowerGenAgent.class);
+    private static ElasticHelper elasticHelper = ElasticHelper.getElasticHelperInstance();
 
     @Override
     protected void takeDown() {
         super.takeDown();
-        LOGGER.info(getLocalName() + " takedown. Killing...");
+        String message = getLocalName() + " takedown. Killing...";
+        LOGGER.info(message);
+        elasticHelper.indexLogs(this, message);
+
         powerInstance.subtractGridMax(maxCapacity);
         powerInstance.subtractPowerLevel(holdCapacity);
         powerInstance.subtractGenRate(toAdd);
@@ -75,8 +80,11 @@ public class PowerGenAgent extends Agent {
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {
+            String log = "";
             for (Behaviour b: behaviourList){
-                LOGGER.info("Removing behaviour(s): "+b);
+                log = getLocalName() + " Removing behaviour(s): "+b.getBehaviourName();
+                LOGGER.info(log);
+                elasticHelper.indexLogs(this, log);
                 removeBehaviour(b);
             }
         }
@@ -87,8 +95,14 @@ public class PowerGenAgent extends Agent {
 
     protected void setup() {
         determineCapacity();
-        LOGGER.info(getAID().getLocalName() + " started with capacity of " + maxCapacity + " and genrate of "
-         + toAdd + "/" + rateSecs + " ms.");
+        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+        logArgs.put("action", "power_generation.init");
+        logArgs.put("max_capacity", String.valueOf(maxCapacity));
+        logArgs.put("gen_rate", toAdd + "/" + rateSecs);
+        String message = getAID().getLocalName() + " started with capacity of " + maxCapacity + " and genrate of "
+                + toAdd + "/" + rateSecs + " ms.";
+        LOGGER.info(message);
+        elasticHelper.indexLogs(this, logArgs);
 
         Utils utils = new Utils();
         utils.registerServices(this, "Power-Generation");
@@ -208,17 +222,27 @@ public class PowerGenAgent extends Agent {
 //                            powerInstance.subtractGenRate(toAdd);
 //                            powerInstance.addGenRate(toAdd);
 
-                            //code to pre vent power exceeding maxcapacity
+                            //code to prevent power exceeding maxcapacity
+                            double logValue=0;
                             if (tempHolder >= maxCapacity) {
                                 addTo = maxCapacity - holdCapacity;
                                 powerInstance.addPowerLevel(addTo);
                                 holdCapacity = holdCapacity + addTo;
+                                logValue = addTo;
                             } else if (tempHolder < maxCapacity) {
                                 powerInstance.addPowerLevel(toAdd);
                                 holdCapacity = holdCapacity + toAdd;
+                                logValue = toAdd;
                             }
 
-                            LOGGER.info(myAgent.getLocalName() + " total power levels1: " + String.valueOf(holdCapacity));
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "power_generation.generate");
+                            logArgs.put("power_generated", String.valueOf(logValue));
+                            logArgs.put("current_capacity", String.valueOf(holdCapacity));
+
+                            String message = myAgent.getLocalName() + " total power levels: " + holdCapacity;
+                            LOGGER.info(message);
+                            elasticHelper.indexLogs(getAgent(), logArgs);
                             if (currentColour != GREEN) {
                                 try {
                                     mapsInstance.changeColor(agentImageView, "GREEN");
@@ -228,7 +252,15 @@ public class PowerGenAgent extends Agent {
                                 currentColour = GREEN;
                             }
                         } else if (holdCapacity >= maxCapacity) {
-                            LOGGER.info("Max capacity at " + holdCapacity + " of " + getName() + " . Paused generation.");
+
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "power_generation.generate");
+                            logArgs.put("power_maxed", "true");
+                            logArgs.put("current_capacity", String.valueOf(holdCapacity));
+
+                            String message = "Max capacity at " + holdCapacity + " of " + getName() + " . Paused generation.";
+                            LOGGER.info(message);
+                            elasticHelper.indexLogs(getAgent(), logArgs);
 
                             if (currentColour != BLUE) {
                                 try {
@@ -239,7 +271,7 @@ public class PowerGenAgent extends Agent {
                                 currentColour = BLUE;
                             }
                         }
-                        if (capacity>=85) {
+                        if (capacity>=25) {
                             if (!sentCFP) {
                                 currentNeighbour = nearestNeighbour.getKey();
                                 utility.sendMessage(myAgent, currentNeighbour, "BEGIN_STORE", "PROPOSE");
@@ -283,7 +315,12 @@ public class PowerGenAgent extends Agent {
                     }
                 } else if (pmsg != null && pmsg.getContent().equals("STOP")) {
                     isOn = false;
-                    LOGGER.info(getAID().getName() + " STOPPING POWER GENERATION...");
+                    LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                    logArgs.put("action", "power_generation.generate");
+                    logArgs.put("power_stop", "true");
+                    String message = getAgent().getLocalName() + " STOPPING POWER GENERATION...";
+                    LOGGER.info(message);
+                    elasticHelper.indexLogs(getAgent(), logArgs);
                     pmsg = null;
                     block();
                 } else {
@@ -334,11 +371,29 @@ public class PowerGenAgent extends Agent {
                             powerInstance.addGenRate(toAdd);
                             reply_incr.setContent("INCR_ACCEPTED");
                             send(reply_incr);
-                            LOGGER.info("INCR_ACCEPTED");
+
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "power_generation.capacity_increase");
+                            logArgs.put("accept_increase", "true");
+                            logArgs.put("capacity_factor", String.valueOf(capacityFactor));
+                            logArgs.put("gen_rate", String.valueOf(toAdd));
+
+                            String message = getLocalName() + " increased capacity factor to: " + capacityFactor + ". Gen rate is now: " + toAdd;
+                            LOGGER.info(message);
+                            elasticHelper.indexLogs(myAgent, logArgs);
+
                         } else {
                             reply_incr.setContent("INCR_REJECTED");
                             send(reply_incr);
-                            LOGGER.info("INCR_REJECTED");
+
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "power_generation.capacity_increase");
+                            logArgs.put("accept_increase", "false");
+
+                            String message = getLocalName() + " rejected call to increase capacity factor.";
+                            LOGGER.info(message);
+
+                            elasticHelper.indexLogs(myAgent, logArgs);
                         }
                         break;
                     case "GENRATE_DECR":
@@ -353,11 +408,27 @@ public class PowerGenAgent extends Agent {
                             powerInstance.addGenRate(toAdd);
                             reply_decr.setContent("DECR_ACCEPTED");
                             send(reply_decr);
-                            LOGGER.info("DECR_ACCEPTED");
+
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "power_generation.capacity_decrease");
+                            logArgs.put("accept_decrease", "true");
+                            logArgs.put("capacity_factor", String.valueOf(capacityFactor));
+                            logArgs.put("gen_rate", String.valueOf(toAdd));
+
+                            String message = getLocalName() + " decreased capacity factor to: " + capacityFactor + ". Gen rate is now: " + toAdd;
+                            LOGGER.info(message);
+                            elasticHelper.indexLogs(myAgent, logArgs);
                         } else {
                             reply_decr.setContent("DECR_REJECTED");
                             send(reply_decr);
-                            LOGGER.info("DECR_REJECTED");
+
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "power_generation.capacity_decrease");
+                            logArgs.put("accept_decrease", "false");
+
+                            String message = getLocalName() + " rejected call to decrease capacity factor.";
+                            LOGGER.info(message);
+                            elasticHelper.indexLogs(myAgent, logArgs);
                         }
                         break;
                     case "PAUSE":
@@ -379,6 +450,7 @@ public class PowerGenAgent extends Agent {
                         if (holdCapacity > 0 && holdCapacity >= toConsume) {
                             reply.setPerformative(ACLMessage.AGREE);
                             reply.setContent("ACCEPT_CONSUME");
+                            send(reply);
                             holdCapacity = holdCapacity - toConsume;
                             powerInstance.subtractPowerLevel(toConsume);
                             if (currentColour == BLUE) {
@@ -389,14 +461,32 @@ public class PowerGenAgent extends Agent {
                                 }
                                 currentColour = GREEN;
                             }
-                            LOGGER.info(myAgent.getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
-                                    + ". Current power levels:" + String.valueOf(holdCapacity));
-                            send(reply);
+
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "power_generation.power_transfer");
+                            logArgs.put("accept_transfer", "true");
+                            logArgs.put("transfer_to", msg.getSender().getLocalName());
+                            logArgs.put("transfer_amount", String.valueOf(toConsume));
+                            logArgs.put("current_capacity", String.valueOf(holdCapacity));
+
+                            String message = getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
+                                    + ". Current power levels:" + holdCapacity;
+                            LOGGER.info(message);
+                            elasticHelper.indexLogs(myAgent, logArgs);
+
                         } else if (holdCapacity <= 0 || holdCapacity < toConsume) {
                             reply.setPerformative(ACLMessage.AGREE);
-                            //System.out.println(myAgent.getLocalName()+" rejected " + msg.getSender().getLocalName());
                             reply.setContent("REJECT_CONSUME");
                             send(reply);
+
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "power_generation.power_transfer");
+                            logArgs.put("accept_transfer", "false");
+                            logArgs.put("transfer_to", msg.getSender().getLocalName());
+
+                            String message = getLocalName() + " rejected transfer of power to " + msg.getSender().getLocalName();
+                            LOGGER.info(message);
+                            elasticHelper.indexLogs(myAgent, logArgs);
                         }
                         break;
                     case "KILL":

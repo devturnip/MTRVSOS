@@ -16,6 +16,7 @@ import org.apache.commons.math3.analysis.function.Pow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.Power;
+import utils.ElasticHelper;
 import utils.Maps;
 import utils.Settings;
 import utils.Utils;
@@ -66,6 +67,7 @@ public class EVAgent extends Agent {
 
     //logs
     private static Logger LOGGER = LoggerFactory.getLogger(EVAgent.class);
+    private static ElasticHelper elasticHelper = ElasticHelper.getElasticHelperInstance();
 
     @Override
     protected void setup() {
@@ -136,6 +138,12 @@ public class EVAgent extends Agent {
         holdCapacity = maxCapacity; //all cars start with full charge
         consumptionRate = (new Random().doubles(0.17, 0.24).findFirst().getAsDouble())/10;
         LOGGER.info("MAXCAPACITY OF "+getLocalName() + ": " + maxCapacity + "kwh");
+
+        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+        logArgs.put("action", "ev.init");
+        logArgs.put("max_capacity", String.valueOf(maxCapacity));
+        logArgs.put("consumption_rate", String.valueOf(consumptionRate));
+        elasticHelper.indexLogs(this, logArgs);
     }
 
     private void initPosition() {
@@ -410,7 +418,14 @@ public class EVAgent extends Agent {
                                 }
                             }
                             rejectCount += 1;
-                            LOGGER.info("Rejected charge");
+                            LOGGER.info(msg.getSender().getLocalName() + " rejected charge to " + getLocalName());
+
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "ev.charge");
+                            logArgs.put("accept_charge", "false");
+                            logArgs.put("rejected_by", msg.getSender().getLocalName());
+                            elasticHelper.indexLogs(this, logArgs);
+
                             Thread.sleep(1000);
                             utility.sendMessageWithArgs(this, charger, arguments, "BEGIN_CHARGE", "REQUEST");
                         }
@@ -426,6 +441,11 @@ public class EVAgent extends Agent {
                         }
                         rejectCount += 1;
                         LOGGER.debug(getLocalName() + " received no messages. COUNT=" + rejectCount);
+                        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                        logArgs.put("action", "ev.charge");
+                        logArgs.put("accept_charge", "false");
+                        logArgs.put("rejected_by", "no_reply");
+                        elasticHelper.indexLogs(this, logArgs);
                         Thread.sleep(1000);
                         utility.sendMessageWithArgs(this, charger, arguments, "BEGIN_CHARGE", "REQUEST");
                     }

@@ -9,14 +9,12 @@ import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.ElasticHelper;
 import utils.Maps;
 import utils.Settings;
 import utils.Utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class PowerStoreDisAgent extends Agent {
     private double maxCapacity = 0;
@@ -44,24 +42,22 @@ public class PowerStoreDisAgent extends Agent {
 
     //logs
     private static Logger LOGGER = LoggerFactory.getLogger(PowerStoreDisAgent.class);
+    private static ElasticHelper elasticHelper = ElasticHelper.getElasticHelperInstance();
 
     @Override
     protected void setup() {
         super.setup();
         determineCapacity();
-        LOGGER.info(getLocalName() + " started with capacity of " + maxCapacity);
+
+        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+        logArgs.put("action", "power_distribution.init");
+        logArgs.put("max_capacity", String.valueOf(maxCapacity));
+
+        String message = getAID().getLocalName() + " started with capacity of " + maxCapacity;
+        LOGGER.info(message);
+        elasticHelper.indexLogs(this, logArgs);
 
         Utils utils = new Utils();
-
-//        boolean isChargingStation = new Random().nextBoolean();
-//
-//        if (isChargingStation) {
-//            String[] arguments = {"Power-Storage_Distribution","EV-Charging"};
-//            utils.registerServices(this, arguments);
-//        }
-//        else {
-//            utils.registerServices(this, "Power-Storage_Distribution");
-//        }
 
         String[] arguments = {"Power-Storage_Distribution","EV-Charging"};
         utils.registerServices(this, arguments);
@@ -80,14 +76,19 @@ public class PowerStoreDisAgent extends Agent {
     @Override
     protected void takeDown() {
         super.takeDown();
-        LOGGER.info(getLocalName() + " takedown. Killing...");
+        String message = getLocalName() + " takedown. Killing...";
+        LOGGER.info(message);
+        elasticHelper.indexLogs(this, message);
         powerInstance.subtractGridMax(maxCapacity);
         powerInstance.subtractPowerLevel(holdCapacity);
         try { DFService.deregister(this); }
         catch (Exception e) {}
         if(!behaviourList.isEmpty()) {
+            String log = "";
             for (Behaviour b: behaviourList){
-                LOGGER.info("Removing behaviour(s): "+b);
+                log = getLocalName() + " Removing behaviour(s): "+ b.getBehaviourName();
+                LOGGER.info(log);
+                elasticHelper.indexLogs(this, log);
                 removeBehaviour(b);
             }
         }
@@ -150,7 +151,9 @@ public class PowerStoreDisAgent extends Agent {
                         powerInstance.addPowerLevel(addTo);
                         holdCapacity = holdCapacity + addTo;
                     }
-                    LOGGER.info(myAgent.getLocalName() + " total power levels: " + String.valueOf(holdCapacity));
+                    String log = getLocalName() + " total power levels: " + holdCapacity;
+                    LOGGER.info(log);
+
                     if (currentColour != GREEN) {
                         try {
                             mapsInstance.changeColor(agentImageView, "GREEN");
@@ -230,12 +233,28 @@ public class PowerStoreDisAgent extends Agent {
                                 String value = (String)msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue();
                                 if(holdCapacity == 0 || holdCapacity < maxCapacity) {
                                     myAgent.addBehaviour(new GeneratePower(value));
+
+                                    LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                    logArgs.put("action", "power_distribution.power_receive");
+                                    logArgs.put("accept_receive", "true");
+                                    logArgs.put("receive_amount", String.valueOf(value));
+                                    logArgs.put("received_from", msg.getSender().getLocalName());
+
+                                    elasticHelper.indexLogs(myAgent, logArgs);
+
                                 } else if (holdCapacity >= maxCapacity) {
                                     myAgent.addBehaviour(new GeneratePower(value));
                                     ACLMessage replyBack = msg.createReply();
                                     replyBack.setPerformative(ACLMessage.REFUSE);
                                     replyBack.setContent("REJECT_STORE");
                                     send(replyBack);
+
+                                    LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                    logArgs.put("action", "power_distribution.power_receive");
+                                    logArgs.put("accept_receive", "false");
+
+                                    elasticHelper.indexLogs(myAgent, logArgs);
+
 
                                 }
                                 break;
@@ -256,12 +275,27 @@ public class PowerStoreDisAgent extends Agent {
                                         currentColour = GREEN;
                                     }
                                     LOGGER.info(myAgent.getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
-                                    + ". Current power levels:" + String.valueOf(holdCapacity));
+                                    + ". Current power levels:" + holdCapacity);
                                     send(reply);
+
+                                    LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                    logArgs.put("action", "power_distribution.power_transfer");
+                                    logArgs.put("accept_transfer", "true");
+                                    logArgs.put("transfer_amount", String.valueOf(toConsume));
+                                    logArgs.put("transfer_to", msg.getSender().getLocalName());
+                                    logArgs.put("current_capacity", String.valueOf(holdCapacity));
+                                    elasticHelper.indexLogs(myAgent, logArgs);
+
                                 } else if (holdCapacity <= 0 || holdCapacity < toConsume) {
                                     reply.setPerformative(ACLMessage.AGREE);
                                     reply.setContent("REJECT_CONSUME");
                                     send(reply);
+
+                                    LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                    logArgs.put("action", "power_distribution.power_transfer");
+                                    logArgs.put("accept_transfer", "false");
+                                    elasticHelper.indexLogs(myAgent, logArgs);
+
                                 }
                                 break;
                             case "BEGIN_CHARGE":
@@ -282,12 +316,26 @@ public class PowerStoreDisAgent extends Agent {
                                         currentColour = GREEN;
                                     }
                                     LOGGER.info(myAgent.getLocalName() + " transferred " + toCharge + " to " + msg.getSender().getLocalName()
-                                            + ". Current power levels:" + String.valueOf(holdCapacity));
+                                            + ". Current power levels:" + holdCapacity);
                                     send(reply);
+
+                                    LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                    logArgs.put("action", "power_distribution.power_transfer");
+                                    logArgs.put("accept_transfer", "true");
+                                    logArgs.put("transfer_amount", String.valueOf(toCharge));
+                                    logArgs.put("transfer_to", msg.getSender().getLocalName());
+                                    logArgs.put("current_capacity", String.valueOf(holdCapacity));
+                                    elasticHelper.indexLogs(myAgent, logArgs);
+
                                 } else if (holdCapacity <= 0 || holdCapacity < toCharge) {
                                     reply.setPerformative(ACLMessage.AGREE);
                                     reply.setContent("REJECT_CONSUME");
                                     send(reply);
+
+                                    LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                    logArgs.put("action", "power_distribution.power_transfer");
+                                    logArgs.put("accept_transfer", "false");
+                                    elasticHelper.indexLogs(myAgent, logArgs);
                                 }
                                 break;
 

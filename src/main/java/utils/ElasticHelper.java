@@ -1,13 +1,20 @@
 package utils;
 
+import jade.core.Agent;
 import org.apache.http.HttpHost;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.*;
 
 public class ElasticHelper {
     private ElasticHelper(){}
@@ -29,7 +36,7 @@ public class ElasticHelper {
             LOGGER.info("Started elastic-client: " + result + ". client: " + elasticClient.toString());
             return result;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn("Elastic endpoint unavailable.");
             return false;
         }
     }
@@ -45,5 +52,84 @@ public class ElasticHelper {
                 return null;
             }
         }
+    }
+
+    public void indexLogs(Agent agent, String logs){
+        if (settingsInstance.getUseElastic()) {
+            try {
+                XContentBuilder xContentBuilder = XContentFactory.jsonBuilder();
+                xContentBuilder.startObject();
+                {
+                    xContentBuilder.field("agent_name", agent.getLocalName());
+                    xContentBuilder.field("agent_type", agent.getClass().getSimpleName());
+                    xContentBuilder.timeField("timestamp", new Date());
+                    xContentBuilder.field("message", logs);
+                }
+                xContentBuilder.endObject();
+                IndexRequest indexRequest = new IndexRequest("smartgridsos").source(xContentBuilder);
+
+                ActionListener listener = new ActionListener<IndexResponse>() {
+                    @Override
+                    public void onResponse(IndexResponse indexResponse) {
+                        LOGGER.info("Successfully logged msg (" + logs + ").");
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        LOGGER.warn("Failed to log to elasticsearch:");
+                        e.printStackTrace();
+                    }
+                };
+
+                elasticClient.indexAsync(indexRequest, RequestOptions.DEFAULT, listener);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            LOGGER.info("Attempted to use elastic logging. Not using elastic logging.");
+        }
+
+    }
+
+    public void indexLogs(Agent agent, LinkedHashMap<String, String> arguments) {
+        if (settingsInstance.getUseElastic()){
+            try {
+                XContentBuilder xContentBuilder = XContentFactory.jsonBuilder();
+                xContentBuilder.startObject();
+                {
+                    xContentBuilder.field("agent_name", agent.getLocalName());
+                    xContentBuilder.field("agent_type", agent.getClass().getSimpleName());
+                    xContentBuilder.timeField("timestamp", new Date());
+                    Set<String> keys = arguments.keySet();
+                    for (String key:keys) {
+                        xContentBuilder.field(key, arguments.get(key));
+                    }
+
+                }
+                xContentBuilder.endObject();
+                IndexRequest indexRequest = new IndexRequest("smartgridsos").source(xContentBuilder);
+
+                ActionListener listener = new ActionListener<IndexResponse>() {
+                    @Override
+                    public void onResponse(IndexResponse indexResponse) {
+                        LOGGER.info(agent.getLocalName() + " logged to elasticsearch with arguments: " + arguments.toString());
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        LOGGER.warn("Failed to log to elasticsearch:");
+                        e.printStackTrace();
+                    }
+                };
+
+                elasticClient.indexAsync(indexRequest, RequestOptions.DEFAULT, listener);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            LOGGER.info("Attempted to use elastic logging. Not using elastic logging.");
+        }
+
     }
 }

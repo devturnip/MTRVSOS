@@ -6,6 +6,7 @@ In this project, I simulate  a smart grid System of Systems (SoS) using agent ba
 
 Each constituent system in the smart grid SoS is represented by an agent in the Jade framework.
 
+The purpose of this simulator is to explore Metamorphic Testing of System of Systems.
 ## Requirements
 - Project built using Java AdoptOpenJDK 15.0.2
 - Intellij (Java) Project Language Level: 11
@@ -60,6 +61,12 @@ Each constituent system in the smart grid SoS is represented by an agent in the 
 3. Run config for intellij (old):
     ![image](notes/run-config.jpg)
 3. Run SmartGridRunner main (current)
+
+## Logging
+- By default, the application logs to console using sl4j's simplelogger.
+- If an Elasticsearch (ES) endpoint is available, logs will be sent to the ES endpoint instead. (WIP)
+- A docker-compose script is included in *scripts* folder for local ELK (no logstash) setup.
+- Be sure to change the ELK endpoints in Settings.java
 
 ## Changeable Variables Description
 Found in Settings.java
