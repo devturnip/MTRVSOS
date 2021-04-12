@@ -5,10 +5,10 @@ public class Settings {
     private static Settings settingsInstance = new Settings();
 
     //Rate Flags
-    private int rateSecsPowerGen = 3000;
-    private int rateSecsSmartHome = 3000;
+    private int rateSecsPowerGen = 1000;
+    private int rateSecsSmartHome = 1000;
     private int rateSecsEV = 2000;
-    private int houseUnit = 10000;
+    private int houseUnit = 1000;
     private int secondsToRun = 600;
 
     //UI Size
