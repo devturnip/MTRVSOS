@@ -1,0 +1,19 @@
+FROM adoptopenjdk/openjdk15 as builder
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git
+
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update && apt-get install --no-install-recommends -y xorg libgl1-mesa-glx && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /smartgrid
+RUN git clone https://github.com/devturnip/MTRVSOS.git /smartgrid
+
+RUN mkdir /sg
+RUN cp -r /smartgrid/target/MTRVSOS-1.0-SNAPSHOT-shaded.jar /sg
+
+RUN rm -rf /smartgrid
+
+WORKDIR /sg
+ENTRYPOINT ["java", "-jar", "MTRVSOS-1.0-SNAPSHOT-shaded.jar"]
+CMD ["-p", "1", "-pd", "1", "-ev", "2", "-sh", "5"]
