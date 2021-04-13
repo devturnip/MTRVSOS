@@ -72,7 +72,7 @@ public class EVAgent extends Agent {
     @Override
     protected void setup() {
         super.setup();
-        InitPosition initPosition = new InitPosition(this,2000);
+        InitPosition initPosition = new InitPosition(this,settingsInstance.getMSToWait());
         UpdatePositionList updatePositionList = new UpdatePositionList(this, 500);
         MoveCar moveCar = new MoveCar(this, 5000);
         CheckSimulationState checkSimulationState = new CheckSimulationState(this, settingsInstance.getSimCheckRate());
