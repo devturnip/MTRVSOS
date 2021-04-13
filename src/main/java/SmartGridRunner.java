@@ -49,6 +49,12 @@ public class SmartGridRunner {
                     parsed.add(args[i]);
                     parsed.add(args[i+1]);
                     settingsInstance.setSecondsToRun(Integer.parseInt(args[i + 1]));
+
+                } else if (arguments.equals("-wt")){
+                    parsed.add(args[i]);
+                    parsed.add(args[i+1]);
+                    settingsInstance.setMSToWait(Integer.parseInt(args[i+1]));
+
                 } else if (arguments.equals("-testrun")) {
                     parsed.add((args[i]));
                     String index_name = "smartgridsos-" + LocalDateTime.now();

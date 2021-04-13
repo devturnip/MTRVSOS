@@ -62,7 +62,7 @@ public class PowerStoreDisAgent extends Agent {
         String[] arguments = {"Power-Storage_Distribution","EV-Charging"};
         utils.registerServices(this, arguments);
 
-        InitPosition initPosition = new InitPosition(this, 2000);
+        InitPosition initPosition = new InitPosition(this, settingsInstance.getMSToWait());
         ReceiveMessage receiveMessage = new ReceiveMessage();
         CheckSimulationState checkSimulationState = new CheckSimulationState(this, settingsInstance.getSimCheckRate());
         behaviourList.add(initPosition);

@@ -10,6 +10,7 @@ public class Settings {
     private int rateSecsEV = 2000;
     private int houseUnit = 1000;
     private int secondsToRun = 600;
+    private int MSToWait = 4000;
 
     //UI Size
     private int multiplier = 2;
@@ -95,6 +96,8 @@ public class Settings {
     public void setELASTIC_PORT(int PORT){ELASTIC_PORT=PORT;}
     public String getINDEXNAME(){return INDEXNAME;}
     public void setINDEXNAME(String indexname){INDEXNAME=indexname;}
+    public int getMSToWait(){return MSToWait;}
+    public void setMSToWait(int ms){MSToWait = ms;}
 
     public String printSettings() {
         StringBuilder sb = new StringBuilder();
