@@ -107,7 +107,7 @@ public class PowerGenAgent extends Agent {
         Utils utils = new Utils();
         utils.registerServices(this, "Power-Generation");
 
-        InitPosition initPosition = new InitPosition(this, 2000);
+        InitPosition initPosition = new InitPosition(this, settingsInstance.getMSToWait());
         ReceiveMessage receiveMessage = new ReceiveMessage();
         PeriodicPowerGeneration periodicPowerGeneration = new PeriodicPowerGeneration(this, rateSecs);
         CheckSimulationState checkSimulationState = new CheckSimulationState(this, settingsInstance.getSimCheckRate());

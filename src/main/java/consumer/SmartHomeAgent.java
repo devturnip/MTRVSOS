@@ -71,7 +71,7 @@ public class SmartHomeAgent extends Agent {
         logArgs.put("consumption_rate", String.valueOf(rateSecs));
         elasticHelper.indexLogs(this, logArgs);
 
-        InitPosition initPosition = new InitPosition(this, 2000);
+        InitPosition initPosition = new InitPosition(this, settingsInstance.getMSToWait());
         ReceiveMessage receiveMessage = new ReceiveMessage();
         ConsumeElectricity consumeElectricity = new ConsumeElectricity(this, rateSecs);
         CheckSimulationState checkSimulationState = new CheckSimulationState(this, settingsInstance.getSimCheckRate());

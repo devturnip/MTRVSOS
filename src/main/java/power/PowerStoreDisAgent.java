@@ -39,6 +39,7 @@ public class PowerStoreDisAgent extends Agent {
     private int currentColour = 0;
     private int GREEN = 1;
     private int BLUE = 2;
+    private int ORANGE = 3;
 
     //logs
     private static Logger LOGGER = LoggerFactory.getLogger(PowerStoreDisAgent.class);
@@ -62,7 +63,7 @@ public class PowerStoreDisAgent extends Agent {
         String[] arguments = {"Power-Storage_Distribution","EV-Charging"};
         utils.registerServices(this, arguments);
 
-        InitPosition initPosition = new InitPosition(this, 2000);
+        InitPosition initPosition = new InitPosition(this, settingsInstance.getMSToWait());
         ReceiveMessage receiveMessage = new ReceiveMessage();
         CheckSimulationState checkSimulationState = new CheckSimulationState(this, settingsInstance.getSimCheckRate());
         behaviourList.add(initPosition);
@@ -187,6 +188,16 @@ public class PowerStoreDisAgent extends Agent {
         @Override
         protected void onTick() {
             pauseAgent = settingsInstance.getSimulationState();
+            if ((holdCapacity/maxCapacity * 100.0) <= 5.0 && agentImageView!= null) {
+                if (currentColour != ORANGE) {
+                    try {
+                        mapsInstance.changeColor(agentImageView, "ORANGE");
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    currentColour = ORANGE;
+                }
+            }
         }
     }
 
