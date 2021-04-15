@@ -10,29 +10,41 @@ RUN apt-get update && \
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get install --no-install-recommends -y libxtst6 libgtk-3-0 libglu1-mesa && rm -rf /var/lib/apt/lists/*
-#RUN apt-get update && apt-get install --no-install-recommends -y x11vnc libgl1-mesa-glx mesa-utils && rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && apt-get install --no-install-recommends -y libgl1-mesa-glx mesa-utils && rm -rf /var/lib/apt/lists/*
 
-ENV LIBGL_ALWAYS_INDIRECT=0
+#ENV LIBGL_ALWAYS_INDIRECT=1
 
 #ENV DISPLAY=:1
 
 RUN mkdir /smartgrid
 RUN git clone -b develop/sim --single-branch https://github.com/devturnip/MTRVSOS.git /smartgrid
 
-RUN mkdir /sg
+RUN mkdir /sg && \
+    mkdir /sgapp
 
-RUN cp /smartgrid/target/MTRVSOS-1.0-SNAPSHOT-shaded.jar /sg
+RUN cp /smartgrid/target/MTRVSOS-1.0-SNAPSHOT-shaded.jar /sgapp
 
 RUN rm -rf /smartgrid
 
 WORKDIR /sg
+
+# RUN wget https://download2.gluonhq.com/openjfx/15/openjfx-15_linux-x64_bin-sdk.zip && \
+#     unzip openjfx-15_linux-x64_bin-sdk.zip && \
+#     cp javafx-sdk-15/lib/* $JAVA_HOME/lib && \
+#     rm -rf openjfx-15_linux-x64_bin-sdk.zip
+
+# RUN wget https://download2.gluonhq.com/openjfx/15/openjfx-15_osx-x64_bin-sdk.zip && \
+#     unzip openjfx-15_osx-x64_bin-sdk.zip && \
+#     rm -rf openjfx-15_osx-x64_bin-sdk.zip
 
 RUN wget https://download2.gluonhq.com/openjfx/15/openjfx-15_linux-x64_bin-sdk.zip && \
     unzip openjfx-15_linux-x64_bin-sdk.zip && \
     cp javafx-sdk-15/lib/* $JAVA_HOME/lib && \
     rm -rf openjfx-15_linux-x64_bin-sdk.zip
 
+WORKDIR /sgapp
 
-ENTRYPOINT ["java", "--module-path", "/sg/javafx-sdk-15/lib", "--add-modules", "javafx.controls,javafx.fxml,javafx.base,javafx.graphics", "-jar", "MTRVSOS-1.0-SNAPSHOT-shaded.jar", "-Dprism.verbose=true"]
+ENTRYPOINT ["java", "--module-path", "/sg/javafx-sdk-15/lib", "--add-modules", "javafx.controls,javafx.base,javafx.graphics,", "-jar", "MTRVSOS-1.0-SNAPSHOT-shaded.jar", "-Dprism.verbose=true"]
+#ENTRYPOINT ["java", "-jar", "MTRVSOS-1.0-SNAPSHOT-shaded.jar"]
 CMD ["-p", "1", "-pd", "1", "-ev", "2", "-sh", "5", "-wt", "5000"]
 

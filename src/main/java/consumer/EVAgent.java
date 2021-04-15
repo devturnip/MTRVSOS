@@ -202,7 +202,7 @@ public class EVAgent extends Agent {
                         //calculate remaining battery first
                         boolean breakLoop = false;
                         double percent = (holdCapacity / maxCapacity) * 100;
-                        LOGGER.debug(getLocalName() + " at " + percent + ". Hold:" + holdCapacity + " Max:" + maxCapacity);
+                        LOGGER.debug(getLocalName() + " at " + percent + "% Hold:" + holdCapacity + " Max:" + maxCapacity);
                         double toDeduct = consumptionRate * moveDistance;
 
                         Point2D nowPoint = new Point2D((int) agentImageView.getX(), (int) agentImageView.getY());
@@ -384,72 +384,76 @@ public class EVAgent extends Agent {
             }
 
             if (toCharge == true && nowPoint.distance(destination) >= 0 && nowPoint.distance(destination) <= 4) {
-                LOGGER.debug(getLocalName() + " is at charging stationnnnnnnnnnnnnnnnnnnn. Sending message to " + nearestNeighbour.getKey());
-                HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toCharge", String.valueOf(maxCapacity));
-                utility.sendMessageWithArgs(this, charger, arguments, "BEGIN_CHARGE", "REQUEST");
-                double percent = (holdCapacity / maxCapacity) * 100;
-                int rejectCount = 0;
-                while (true) {
-                    ACLMessage msg = agent.receive();
-                    if (msg != null) {
-                        String contents = msg.getContent();
-                        if (contents.equals("ACCEPT_CHARGE")) {
-                            double chargeValue = Double.parseDouble(arguments.getValue());
-                            double temp = holdCapacity + chargeValue;
-                            if (temp >= maxCapacity) {
-                                chargeValue = temp - maxCapacity;
+                if (pauseAgent) {
+
+                } else {
+                    LOGGER.debug(getLocalName() + " is at charging stationnnnnnnnnnnnnnnnnnnn. Sending message to " + nearestNeighbour.getKey());
+                    HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toCharge", String.valueOf(maxCapacity));
+                    utility.sendMessageWithArgs(this, charger, arguments, "BEGIN_CHARGE", "REQUEST");
+                    double percent = (holdCapacity / maxCapacity) * 100;
+                    int rejectCount = 0;
+                    while (true) {
+                        ACLMessage msg = agent.receive();
+                        if (msg != null) {
+                            String contents = msg.getContent();
+                            if (contents.equals("ACCEPT_CHARGE")) {
+                                double chargeValue = Double.parseDouble(arguments.getValue());
+                                double temp = holdCapacity + chargeValue;
+                                if (temp >= maxCapacity) {
+                                    chargeValue = maxCapacity - holdCapacity;
+                                }
+                                holdCapacity = holdCapacity + chargeValue;
+                                LOGGER.info(agent.getLocalName() + "fully charged: " + holdCapacity + "/" + maxCapacity);
+                                if (percent > 10) {
+                                    tryNext = false;
+                                    hasTarget = false;
+                                    return true;
+                                } else {
+                                    return false;
+                                }
+                            } else if (contents.equals("REJECT_CHARGE")) {
+                                if (rejectCount >= 10) {
+                                    rejectCount = 0;
+
+                                    if (percent > 10) {
+                                        tryNext = true;
+                                        return false;
+                                    }
+                                }
+                                rejectCount += 1;
+                                LOGGER.info(msg.getSender().getLocalName() + " rejected charge to " + getLocalName());
+
+                                LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                logArgs.put("action", "ev.charge");
+                                logArgs.put("accept_charge", "false");
+                                logArgs.put("rejected_by", msg.getSender().getLocalName());
+                                elasticHelper.indexLogs(this, logArgs);
+
+                                Thread.sleep(1000);
+                                utility.sendMessageWithArgs(this, charger, arguments, "BEGIN_CHARGE", "REQUEST");
                             }
-                            holdCapacity = holdCapacity + chargeValue;
-                            LOGGER.info(agent.getLocalName() + "fully charged: " + holdCapacity + "/" + maxCapacity);
-                            if (percent > 10) {
-                                tryNext = false;
-                                hasTarget = false;
-                                return true;
-                            } else {
-                                return false;
-                            }
-                        } else if (contents.equals("REJECT_CHARGE")) {
-                            if (rejectCount >= 10) {
+                        } else {
+                            if (rejectCount >= 5) {
                                 rejectCount = 0;
 
                                 if (percent > 10) {
                                     tryNext = true;
+                                    hasTarget = false;
                                     return false;
                                 }
                             }
                             rejectCount += 1;
-                            LOGGER.info(msg.getSender().getLocalName() + " rejected charge to " + getLocalName());
-
+                            LOGGER.debug(getLocalName() + " received no messages. COUNT=" + rejectCount);
                             LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
                             logArgs.put("action", "ev.charge");
                             logArgs.put("accept_charge", "false");
-                            logArgs.put("rejected_by", msg.getSender().getLocalName());
+                            logArgs.put("rejected_by", "no_reply");
                             elasticHelper.indexLogs(this, logArgs);
-
                             Thread.sleep(1000);
                             utility.sendMessageWithArgs(this, charger, arguments, "BEGIN_CHARGE", "REQUEST");
                         }
-                    } else {
-                        if (rejectCount >= 5) {
-                            rejectCount = 0;
 
-                            if (percent > 10) {
-                                tryNext = true;
-                                hasTarget = false;
-                                return false;
-                            }
-                        }
-                        rejectCount += 1;
-                        LOGGER.debug(getLocalName() + " received no messages. COUNT=" + rejectCount);
-                        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
-                        logArgs.put("action", "ev.charge");
-                        logArgs.put("accept_charge", "false");
-                        logArgs.put("rejected_by", "no_reply");
-                        elasticHelper.indexLogs(this, logArgs);
-                        Thread.sleep(1000);
-                        utility.sendMessageWithArgs(this, charger, arguments, "BEGIN_CHARGE", "REQUEST");
                     }
-
                 }
 
             }

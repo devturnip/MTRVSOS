@@ -161,6 +161,8 @@ public class HelloFX extends Application {
                     if (Double.isFinite(gdRate)) {
                         BigDecimal bigDecimal = new BigDecimal(gdRate).setScale(2, RoundingMode.HALF_UP);
                         utilisationRate.setText("D/G: " + bigDecimal.doubleValue() + "%");
+                    } else {
+                        utilisationRate.setText("-%");
                     }
                 };
                 Platform.runLater(updater);
