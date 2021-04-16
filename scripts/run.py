@@ -1,20 +1,35 @@
 import subprocess
+import os
+from pathlib import Path
+import _thread as t
+
+def getJarFile():
+    base = Path(__file__).parent.parent / "target"
+    for file in os.listdir(base):
+        if "shaded" in file:
+            return base / file
 
 def executeJarRunner():
     ret = executeJar()
-    if ret !=0:
+    if ret != 0:
         print("failed")
     else:
         print("success")
+        executeJar()
+
 
 def executeJar():
-    jarFile = '/Users/tony/Google Drive/School/KAIST/Lessons/SELAB/Projects/MTRVSOS/target/MTRVSOS-1.0-SNAPSHOT-shaded.jar'
-    ret = subprocess.call(['java', '-jar', jarFile, '-rt', '15'])
+    os.getcwd()
+    jarfile = getJarFile()
+    ret = subprocess.call(['java', '-jar', jarfile, '-rt', '15'])
     return ret
 
+
 def main():
-    executeJar()
+    t.start_new_thread(executeJar, ())
+    executeJarRunner()
+
+
 
 if __name__ == '__main__':
     main()
-    
