@@ -2,7 +2,19 @@ import subprocess
 import os
 from pathlib import Path
 import _thread as t
+import threading
 from datetime import datetime
+
+class runner (threading.Thread):
+    def __init__(self, name):
+        threading.Thread.__init__(self)
+        self.name = name
+        
+    def run(self):
+        print("Starting:" + self.name)
+        executeJarRunner()
+        print("Exiting:"+ self.name)
+
 
 def getJarFile():
     base = Path(__file__).parent.parent / "target"
@@ -16,7 +28,6 @@ def executeJarRunner():
         print("failed")
     else:
         print("success")
-        executeJar()
 
 
 def executeJar():
@@ -51,8 +62,16 @@ def executeJar():
 
 
 def main():
+    # t.start_new_thread(executeJarRunner, ())
+    # t.start_new_thread(executeJarRunner, ())
     # t.start_new_thread(executeJar, ())
-    executeJarRunner()
+    # executeJarRunner()
+    thread1 = runner("thread-1")
+    thread2 = runner("thread-2")
+    thread1.start()
+    thread2.start()
+    thread1.join()
+    thread2.join()
 
 if __name__ == '__main__':
     main()
