@@ -48,6 +48,7 @@ public class PowerGenAgent extends Agent {
     private LinkedHashMap<AID, Double> nearestNeighbours = new LinkedHashMap<>();
     private ArrayList<Behaviour> behaviourList = new ArrayList<>();
     private boolean pauseAgent = false;
+    private boolean simulateFail = false;
 
     //message sending flags
     private boolean sentCFP = false;
@@ -61,6 +62,7 @@ public class PowerGenAgent extends Agent {
     private int currentColour = 0;
     private int GREEN = 1;
     private int BLUE = 2;
+    private int RED = 3;
 
     //logs
     private static Logger LOGGER = LoggerFactory.getLogger(PowerGenAgent.class);
@@ -199,6 +201,12 @@ public class PowerGenAgent extends Agent {
 
         @Override
         protected void onTick() {
+
+            if (simulateFail) {
+                block();
+                return;
+            }
+
             //very convoluted...
             //should rewrite at some point
             double addTo = toAdd;
@@ -488,6 +496,20 @@ public class PowerGenAgent extends Agent {
                             LOGGER.info(message);
                             elasticHelper.indexLogs(myAgent, logArgs);
                         }
+                        break;
+                    case "SIMULATE_FAIL":
+                        simulateFail = true;
+                        if (currentColour != RED) {
+                            try {
+                                mapsInstance.changeColor(agentImageView, "RED");
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            currentColour = RED;
+                        }
+                        break;
+                    case "SIMULATE_RECOVER":
+                        simulateFail = false;
                         break;
                     case "KILL":
                         takeDown();

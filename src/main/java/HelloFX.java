@@ -265,6 +265,7 @@ public class HelloFX extends Application {
                       startSmartHomeContainer(runtime);
                       startEVContainer(runtime);
                       startSoSAgent(runtime);
+                      startTestAgent();
                       new Thread(task).start();
                   }
                 };
@@ -396,6 +397,17 @@ public class HelloFX extends Application {
         String agentName = sosAgentName;
         try {
             AgentController ag = containerController.createNewAgent(agentName, "SoS.SoSAgent",
+                    new Object[]{});
+            ag.start();
+        } catch (StaleProxyException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void startTestAgent() {
+        String agentName = "rand-test-agent";
+        try {
+            AgentController ag = sosAgentContainerController.createNewAgent(agentName, "metamorphic.TestAgent",
                     new Object[]{});
             ag.start();
         } catch (StaleProxyException e) {
