@@ -83,12 +83,13 @@ public class SoSAgent extends Agent {
                 double totalPowerLevels = powerInstance.getGridMax();
                 double currentPowerLevels = powerInstance.showPowerLevels();
                 double powerPercentage = (currentPowerLevels/totalPowerLevels)*100;
+                double demandRate = powerInstance.getDemand();
+                double genRate = powerInstance.getGenRate();
 
+                double gdRate = (demandRate / genRate) * 100;
+                double utRate = -1.0;
                 if (powerPercentage>powerUtilisationRate) {
-                    double demandRate = powerInstance.getDemand();
-                    double genRate = powerInstance.getGenRate();
-                    double gdRate = (demandRate / genRate) * 100;
-                    double utRate = -1.0;
+                    //if total power reserves are greater than set value
                     if (Double.isFinite(gdRate)) {
                         BigDecimal bigDecimal = new BigDecimal(gdRate).setScale(2, RoundingMode.HALF_UP);
                         utRate = bigDecimal.doubleValue();
@@ -124,29 +125,33 @@ public class SoSAgent extends Agent {
                                     //LOGGER.warn("AGENTSLOCALNAME: " + agents[i].getLocalName());
                                 }
                             }
-
-                        } else if (demandRate > genRate) {
-                            Utils utils = new Utils();
-                            AID[] agents = utils.getAgentNamesByService(SoSAgent.this, "Power-Generation");
-
-                            for (int i = 0; i < agents.length; i++) {
-                                if (!messageQueue.contains(agents[i].getLocalName())) {
-                                    String content = "GENRATE_INCR";
-                                    HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toAdd", String.valueOf(preferredIncrement));
-                                    utils.sendMessageWithArgs(myAgent, agents[i], arguments, content, "REQUEST");
-                                    messageQueue.add(agents[i].getLocalName());
-                                    //LOGGER.warn("AGENTSLOCALNAME: " + agents[i].getLocalName());
-                                }
-                            }
                         }
                     }
 
-                } else {
-                        block();
-                    }
+                } else if (powerPercentage <= 40) {
+                    genRateInc();
+                }
+                else {
+                    block();
+                }
             }
             else {
                 block();
+            }
+        }
+
+        private void genRateInc() {
+            Utils utils = new Utils();
+            AID[] agents = utils.getAgentNamesByService(SoSAgent.this, "Power-Generation");
+
+            for (int i = 0; i < agents.length; i++) {
+                if (!messageQueue.contains(agents[i].getLocalName())) {
+                    String content = "GENRATE_INCR";
+                    HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toAdd", String.valueOf(preferredIncrement));
+                    utils.sendMessageWithArgs(myAgent, agents[i], arguments, content, "REQUEST");
+                    messageQueue.add(agents[i].getLocalName());
+                    //LOGGER.warn("AGENTSLOCALNAME: " + agents[i].getLocalName());
+                }
             }
         }
     }
@@ -165,6 +170,7 @@ public class SoSAgent extends Agent {
                         messageQueue.remove(message.getSender().getLocalName());
                         break;
                     case "INCR_REJECTED":
+                        messageQueue.remove(message.getSender().getLocalName());
                     case "DECR_REJECTED":
                         if (msg_reject_count >= 5) {
                             messageQueue.remove(message.getSender().getLocalName());

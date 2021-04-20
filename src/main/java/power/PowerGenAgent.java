@@ -271,7 +271,7 @@ public class PowerGenAgent extends Agent {
                                 currentColour = BLUE;
                             }
                         }
-                        if (capacity>=25) {
+                        if (capacity>20) {
                             if (!sentCFP) {
                                 currentNeighbour = nearestNeighbour.getKey();
                                 utility.sendMessage(myAgent, currentNeighbour, "BEGIN_STORE", "PROPOSE");

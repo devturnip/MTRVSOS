@@ -5,8 +5,8 @@ public class Settings {
     private static Settings settingsInstance = new Settings();
 
     //Rate Flags
-    private int rateSecsPowerGen = 1000;
-    private int rateSecsSmartHome = 1000;
+    private int rateSecsPowerGen = 500;
+    private int rateSecsSmartHome = 600;
     private int rateSecsEV = 2000;
     private int houseUnit = 1000;
     private int secondsToRun = 600;
@@ -42,6 +42,7 @@ public class Settings {
 
     private boolean useElastic = false;
     private String ELASTIC_HOST = "192.168.0.31";
+//    private String ELASTIC_HOST = "192.168.25.19";
     private int ELASTIC_PORT = 9200;
     private String INDEXNAME = "smartgridsos";
 

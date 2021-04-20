@@ -49,16 +49,18 @@ public class SmartGridRunner {
                     parsed.add(args[i]);
                     parsed.add(args[i+1]);
                     settingsInstance.setSecondsToRun(Integer.parseInt(args[i + 1]));
-
                 } else if (arguments.equals("-wt")){
                     parsed.add(args[i]);
                     parsed.add(args[i+1]);
                     settingsInstance.setMSToWait(Integer.parseInt(args[i+1]));
-
                 } else if (arguments.equals("-testrun")) {
                     parsed.add((args[i]));
                     String index_name = "smartgridsos-" + LocalDateTime.now();
                     settingsInstance.setINDEXNAME(index_name.replaceAll(":", "-").toLowerCase(Locale.ROOT));
+                } else if (arguments.equals("-indexname")) {
+                    parsed.add((args[i]));
+                    parsed.add(args[i+1]);
+                    settingsInstance.setINDEXNAME(args[i+1]);
                 }
             }
 
@@ -66,8 +68,6 @@ public class SmartGridRunner {
                 LOGGER.warn("SOME ARGS NOT RECOGNISED!");
             }
         }
-
-
 
         try {
             LOGGER.info(settingsInstance.printSettings());
