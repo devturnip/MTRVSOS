@@ -361,159 +361,167 @@ public class PowerGenAgent extends Agent {
             ACLMessage msg = myAgent.receive();
             if (msg != null) {
                 String contents = msg.getContent();
-                switch (contents) {
-                    case "GENRATE_QUERY":
-                        ACLMessage reply_query = msg.createReply();
-                        reply_query.setContent("max:" + maxGenCapacity + " current:" + toAdd + " capacity_factor:" + capacityFactor);
-                        send(reply_query);
-                        break;
-                    case "GENRATE_INCR":
-                        double to_inc = Double.valueOf(msg.getAllUserDefinedParameters().get("toAdd").toString());
-                        double temp_cf_i = capacityFactor + to_inc;
-                        ACLMessage reply_incr = msg.createReply();
-                        if (temp_cf_i > 0.0 && temp_cf_i < 1.0) {
-                            capacityFactor = temp_cf_i;
-                            int og_toAdd = toAdd;
-                            powerInstance.subtractGenRate(og_toAdd);
-                            toAdd = (int) (maxGenCapacity*capacityFactor);
-                            powerInstance.addGenRate(toAdd);
-                            reply_incr.setContent("INCR_ACCEPTED");
-                            send(reply_incr);
+                if (!simulateFail) {
+                    switch (contents) {
+                        case "GENRATE_QUERY":
+                            ACLMessage reply_query = msg.createReply();
+                            reply_query.setContent("max:" + maxGenCapacity + " current:" + toAdd + " capacity_factor:" + capacityFactor);
+                            send(reply_query);
+                            break;
+                        case "GENRATE_INCR":
+                            double to_inc = Double.valueOf(msg.getAllUserDefinedParameters().get("toAdd").toString());
+                            double temp_cf_i = capacityFactor + to_inc;
+                            ACLMessage reply_incr = msg.createReply();
+                            if (temp_cf_i > 0.0 && temp_cf_i < 1.0) {
+                                capacityFactor = temp_cf_i;
+                                int og_toAdd = toAdd;
+                                powerInstance.subtractGenRate(og_toAdd);
+                                toAdd = (int) (maxGenCapacity * capacityFactor);
+                                powerInstance.addGenRate(toAdd);
+                                reply_incr.setContent("INCR_ACCEPTED");
+                                send(reply_incr);
 
-                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
-                            logArgs.put("action", "power_generation.capacity_increase");
-                            logArgs.put("accept_increase", "true");
-                            logArgs.put("capacity_factor", String.valueOf(capacityFactor));
-                            logArgs.put("gen_rate", String.valueOf(toAdd));
+                                LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                logArgs.put("action", "power_generation.capacity_increase");
+                                logArgs.put("accept_increase", "true");
+                                logArgs.put("capacity_factor", String.valueOf(capacityFactor));
+                                logArgs.put("gen_rate", String.valueOf(toAdd));
 
-                            String message = getLocalName() + " increased capacity factor to: " + capacityFactor + ". Gen rate is now: " + toAdd;
-                            LOGGER.info(message);
-                            elasticHelper.indexLogs(myAgent, logArgs);
+                                String message = getLocalName() + " increased capacity factor to: " + capacityFactor + ". Gen rate is now: " + toAdd;
+                                LOGGER.info(message);
+                                elasticHelper.indexLogs(myAgent, logArgs);
 
-                        } else {
-                            reply_incr.setContent("INCR_REJECTED");
-                            send(reply_incr);
+                            } else {
+                                reply_incr.setContent("INCR_REJECTED");
+                                send(reply_incr);
 
-                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
-                            logArgs.put("action", "power_generation.capacity_increase");
-                            logArgs.put("accept_increase", "false");
+                                LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                logArgs.put("action", "power_generation.capacity_increase");
+                                logArgs.put("accept_increase", "false");
 
-                            String message = getLocalName() + " rejected call to increase capacity factor.";
-                            LOGGER.info(message);
+                                String message = getLocalName() + " rejected call to increase capacity factor.";
+                                LOGGER.info(message);
 
-                            elasticHelper.indexLogs(myAgent, logArgs);
-                        }
-                        break;
-                    case "GENRATE_DECR":
-                        double to_dec = Double.valueOf(msg.getAllUserDefinedParameters().get("toAdd").toString());
-                        double temp_cf_d = capacityFactor - to_dec;
-                        ACLMessage reply_decr = msg.createReply();
-                        if (temp_cf_d > 0.0 && temp_cf_d < 1.0) {
-                            capacityFactor = temp_cf_d;
-                            int og_toDec = toAdd;
-                            powerInstance.subtractGenRate(og_toDec);
-                            toAdd = (int) (maxGenCapacity*capacityFactor);
-                            powerInstance.addGenRate(toAdd);
-                            reply_decr.setContent("DECR_ACCEPTED");
-                            send(reply_decr);
+                                elasticHelper.indexLogs(myAgent, logArgs);
+                            }
+                            break;
+                        case "GENRATE_DECR":
+                            double to_dec = Double.valueOf(msg.getAllUserDefinedParameters().get("toAdd").toString());
+                            double temp_cf_d = capacityFactor - to_dec;
+                            ACLMessage reply_decr = msg.createReply();
+                            if (temp_cf_d > 0.0 && temp_cf_d < 1.0) {
+                                capacityFactor = temp_cf_d;
+                                int og_toDec = toAdd;
+                                powerInstance.subtractGenRate(og_toDec);
+                                toAdd = (int) (maxGenCapacity * capacityFactor);
+                                powerInstance.addGenRate(toAdd);
+                                reply_decr.setContent("DECR_ACCEPTED");
+                                send(reply_decr);
 
-                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
-                            logArgs.put("action", "power_generation.capacity_decrease");
-                            logArgs.put("accept_decrease", "true");
-                            logArgs.put("capacity_factor", String.valueOf(capacityFactor));
-                            logArgs.put("gen_rate", String.valueOf(toAdd));
+                                LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                logArgs.put("action", "power_generation.capacity_decrease");
+                                logArgs.put("accept_decrease", "true");
+                                logArgs.put("capacity_factor", String.valueOf(capacityFactor));
+                                logArgs.put("gen_rate", String.valueOf(toAdd));
 
-                            String message = getLocalName() + " decreased capacity factor to: " + capacityFactor + ". Gen rate is now: " + toAdd;
-                            LOGGER.info(message);
-                            elasticHelper.indexLogs(myAgent, logArgs);
-                        } else {
-                            reply_decr.setContent("DECR_REJECTED");
-                            send(reply_decr);
+                                String message = getLocalName() + " decreased capacity factor to: " + capacityFactor + ". Gen rate is now: " + toAdd;
+                                LOGGER.info(message);
+                                elasticHelper.indexLogs(myAgent, logArgs);
+                            } else {
+                                reply_decr.setContent("DECR_REJECTED");
+                                send(reply_decr);
 
-                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
-                            logArgs.put("action", "power_generation.capacity_decrease");
-                            logArgs.put("accept_decrease", "false");
+                                LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                logArgs.put("action", "power_generation.capacity_decrease");
+                                logArgs.put("accept_decrease", "false");
 
-                            String message = getLocalName() + " rejected call to decrease capacity factor.";
-                            LOGGER.info(message);
-                            elasticHelper.indexLogs(myAgent, logArgs);
-                        }
-                        break;
-                    case "PAUSE":
-                        pauseAgent = true;
-                        break;
-                    case "RESUME" :
-                        pauseAgent = false;
-                        break;
-                    case "START":
-                        pmsg = msg;
-                        break;
-                    case "ACCEPT_STORE":
-                    case "REJECT_STORE":
-                        smsg = msg;
-                        break;
-                    case "BEGIN_CONSUME":
-                        ACLMessage reply = msg.createReply();
-                        double toConsume = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
-                        if (holdCapacity > 0 && holdCapacity >= toConsume) {
-                            reply.setPerformative(ACLMessage.AGREE);
-                            reply.setContent("ACCEPT_CONSUME");
-                            send(reply);
-                            holdCapacity = holdCapacity - toConsume;
-                            powerInstance.subtractPowerLevel(toConsume);
-                            if (currentColour == BLUE) {
+                                String message = getLocalName() + " rejected call to decrease capacity factor.";
+                                LOGGER.info(message);
+                                elasticHelper.indexLogs(myAgent, logArgs);
+                            }
+                            break;
+                        case "PAUSE":
+                            pauseAgent = true;
+                            break;
+                        case "RESUME":
+                            pauseAgent = false;
+                            break;
+                        case "START":
+                            pmsg = msg;
+                            break;
+                        case "ACCEPT_STORE":
+                        case "REJECT_STORE":
+                            smsg = msg;
+                            break;
+                        case "BEGIN_CONSUME":
+                            ACLMessage reply = msg.createReply();
+                            double toConsume = Double.parseDouble(msg.getAllUserDefinedParameters().entrySet().iterator().next().getValue().toString());
+                            if (holdCapacity > 0 && holdCapacity >= toConsume) {
+                                reply.setPerformative(ACLMessage.AGREE);
+                                reply.setContent("ACCEPT_CONSUME");
+                                send(reply);
+                                holdCapacity = holdCapacity - toConsume;
+                                powerInstance.subtractPowerLevel(toConsume);
+                                if (currentColour == BLUE) {
+                                    try {
+                                        mapsInstance.changeColor(agentImageView, "GREEN");
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                    currentColour = GREEN;
+                                }
+
+                                LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                logArgs.put("action", "power_generation.power_transfer");
+                                logArgs.put("accept_transfer", "true");
+                                logArgs.put("transfer_to", msg.getSender().getLocalName());
+                                logArgs.put("transfer_amount", String.valueOf(toConsume));
+                                logArgs.put("current_capacity", String.valueOf(holdCapacity));
+
+                                String message = getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
+                                        + ". Current power levels:" + holdCapacity;
+                                LOGGER.info(message);
+                                elasticHelper.indexLogs(myAgent, logArgs);
+
+                            } else if (holdCapacity <= 0 || holdCapacity < toConsume) {
+                                reply.setPerformative(ACLMessage.AGREE);
+                                reply.setContent("REJECT_CONSUME");
+                                send(reply);
+
+                                LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                logArgs.put("action", "power_generation.power_transfer");
+                                logArgs.put("accept_transfer", "false");
+                                logArgs.put("transfer_to", msg.getSender().getLocalName());
+
+                                String message = getLocalName() + " rejected transfer of power to " + msg.getSender().getLocalName();
+                                LOGGER.info(message);
+                                elasticHelper.indexLogs(myAgent, logArgs);
+                            }
+                            break;
+                        case "SIMULATE_FAIL":
+                            simulateFail = true;
+                            if (currentColour != RED) {
                                 try {
-                                    mapsInstance.changeColor(agentImageView, "GREEN");
+                                    mapsInstance.changeColor(agentImageView, "RED");
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
-                                currentColour = GREEN;
+                                currentColour = RED;
                             }
-
-                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
-                            logArgs.put("action", "power_generation.power_transfer");
-                            logArgs.put("accept_transfer", "true");
-                            logArgs.put("transfer_to", msg.getSender().getLocalName());
-                            logArgs.put("transfer_amount", String.valueOf(toConsume));
-                            logArgs.put("current_capacity", String.valueOf(holdCapacity));
-
-                            String message = getLocalName() + " transferred " + toConsume + " to " + msg.getSender().getLocalName()
-                                    + ". Current power levels:" + holdCapacity;
-                            LOGGER.info(message);
-                            elasticHelper.indexLogs(myAgent, logArgs);
-
-                        } else if (holdCapacity <= 0 || holdCapacity < toConsume) {
-                            reply.setPerformative(ACLMessage.AGREE);
-                            reply.setContent("REJECT_CONSUME");
-                            send(reply);
-
-                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
-                            logArgs.put("action", "power_generation.power_transfer");
-                            logArgs.put("accept_transfer", "false");
-                            logArgs.put("transfer_to", msg.getSender().getLocalName());
-
-                            String message = getLocalName() + " rejected transfer of power to " + msg.getSender().getLocalName();
-                            LOGGER.info(message);
-                            elasticHelper.indexLogs(myAgent, logArgs);
-                        }
-                        break;
-                    case "SIMULATE_FAIL":
-                        simulateFail = true;
-                        if (currentColour != RED) {
-                            try {
-                                mapsInstance.changeColor(agentImageView, "RED");
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            currentColour = RED;
-                        }
-                        break;
-                    case "SIMULATE_RECOVER":
+                            break;
+//                        case "SIMULATE_RECOVER":
+//                            simulateFail = false;
+//                            break;
+                        case "KILL":
+                            takeDown();
+                            break;
+                    }
+                } else {
+                    if (contents.equals("SIMULATE_RECOVER")){
                         simulateFail = false;
-                        break;
-                    case "KILL":
-                        takeDown();
-                        break;
+                    } else {
+                        block();
+                    }
                 }
             }
             else {
