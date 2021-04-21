@@ -61,6 +61,10 @@ public class SmartGridRunner {
                     parsed.add((args[i]));
                     parsed.add(args[i+1]);
                     settingsInstance.setINDEXNAME(args[i+1]);
+                } else if (arguments.equals("-elastichost")) {
+                    parsed.add((args[i]));
+                    parsed.add(args[i+1]);
+                    settingsInstance.setELASTIC_HOST(args[i+1]);
                 }
             }
 

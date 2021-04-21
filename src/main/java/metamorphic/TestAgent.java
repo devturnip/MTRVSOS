@@ -1,6 +1,7 @@
 package metamorphic;
 
 import SoS.SoSAgent;
+import com.opencsv.exceptions.CsvValidationException;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
@@ -10,6 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.PowerGenAgent;
 import utils.Utils;
+
+import java.io.IOException;
+import java.util.Random;
 
 public class TestAgent extends Agent {
     private Utils utils = new Utils();
@@ -52,9 +56,27 @@ public class TestAgent extends Agent {
             Restore agent state after calculated time has elapsed.
              */
             AID[] agents = utils.getAgentNamesByService(myAgent, "Power-Generation");
-            utils.sendMessage(myAgent, agents[0], "SIMULATE_FAIL", "INFORM");
-            addBehaviour(new RecoverAgent(myAgent, 10000, agents[0]));
-            LOGGER.info(getLocalName() + " sent SIMULATE_FAIL to " + agents[0].getLocalName());
+            float probability = 100.0F;
+            for (AID agent:agents) {
+                boolean toCrash = getRandomBoolean(probability);
+                if(toCrash) {
+                    utils.sendMessage(myAgent, agent, "SIMULATE_FAIL", "INFORM");
+                    long downTime = 0;
+                    try {
+                        downTime = utils.getOutageDownTime();
+                        addBehaviour(new RecoverAgent(myAgent, downTime, agent));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (CsvValidationException e) {
+                        e.printStackTrace();
+                    }
+                    LOGGER.info(getLocalName() + " sent SIMULATE_FAIL for " + downTime + " to " + agent.getLocalName());
+                    probability = probability/2; //halves failure everytime a failure is triggered.
+                } else {
+                    LOGGER.info(getLocalName() + " skipped SIMULATE_FAIL for " + agent.getLocalName());
+                }
+            }
+
         }
     }
 
@@ -85,6 +107,11 @@ public class TestAgent extends Agent {
             utils.sendMessage(getAgent(), receiver, "SIMULATE_RECOVER", "INFORM");
             LOGGER.info(getLocalName() + " sent SIMULATE_RECOVER to " + receiver.getLocalName());
         }
+    }
+
+    private boolean getRandomBoolean(float probability) {
+        double randomValue = Math.random()*100;
+        return randomValue <= probability;
     }
 
 }
