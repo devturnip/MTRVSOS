@@ -1,5 +1,6 @@
 import jade.core.Agent;
 import javafx.application.Application;
+import utils.UXE;
 
 public class HelloWorldAgent extends Agent{
     private HelloFX helloFX;

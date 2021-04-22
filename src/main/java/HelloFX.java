@@ -30,10 +30,7 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.Power;
-import utils.Maps;
-import utils.Settings;
-import utils.TimeTracker;
-import utils.Utils;
+import utils.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -265,7 +262,9 @@ public class HelloFX extends Application {
                       startSmartHomeContainer(runtime);
                       startEVContainer(runtime);
                       startSoSAgent(runtime);
-                      startTestAgent();
+                      if (settingsInstance.getTestRun().equalsIgnoreCase("reliablebehaviour")) {
+                          startTestAgent();
+                      }
                       new Thread(task).start();
                   }
                 };
@@ -590,7 +589,8 @@ public class HelloFX extends Application {
     }
 
 
-    public static void main(String[] args) {
+    public static void main (String[] args) throws Exception {
+        Thread.setDefaultUncaughtExceptionHandler(new UXE());
         launch();
     }
 

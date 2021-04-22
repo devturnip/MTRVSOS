@@ -14,16 +14,13 @@ import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.Power;
-import utils.ElasticHelper;
-import utils.Maps;
-import utils.Settings;
-import utils.Utils;
+import utils.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 
-public class SmartHomeAgent extends Agent {
+public class SmartHomeAgent extends Agent{
     Settings settingsInstance = Settings.getSettingsInstance();
     private HashMap<String, Double> appliancesList = new HashMap<>();
     private double totalAppliancePowerConsumption = 0;
@@ -86,7 +83,7 @@ public class SmartHomeAgent extends Agent {
     }
 
     @Override
-    protected void takeDown() {
+    protected void takeDown(){
         super.takeDown();
         powerInstance.subtractDemand(totalAppliancePowerConsumption);
         setDemandLabel();

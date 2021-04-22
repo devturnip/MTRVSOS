@@ -1,29 +1,43 @@
 package metamorphic;
 
-import SoS.SoSAgent;
 import com.opencsv.exceptions.CsvValidationException;
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.OneShotBehaviour;
+import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
-import jade.lang.acl.ACLMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import power.Power;
 import power.PowerGenAgent;
+import utils.ElasticHelper;
 import utils.Utils;
 
 import java.io.IOException;
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 public class TestAgent extends Agent {
     private Utils utils = new Utils();
     private static Logger LOGGER = LoggerFactory.getLogger(PowerGenAgent.class);
+    private Power powerInstance = Power.getPowerInstance();
+    private Behaviour behaviour = null;
+    private ElasticHelper elasticHelper = ElasticHelper.getElasticHelperInstance();
+    private ArrayList<AID> checkedAgents = new ArrayList<>();
 
     @Override
     protected void setup() {
         super.setup();
-        addBehaviour(new WakeTestAgentBehaviour(this, 30000));
-        LOGGER.info(getLocalName() + " started.");
+        behaviour = new CheckPowerUtilisation(this, 1000);
+        addBehaviour(behaviour);
+
+        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+        logArgs.put("action", "test_agent.init");
+        logArgs.put("test_type", behaviour.getBehaviourName());
+        String message = getLocalName() + " started.";
+        LOGGER.info(message);
+        elasticHelper.indexLogs(this, logArgs);
     }
 
     @Override
@@ -31,19 +45,6 @@ public class TestAgent extends Agent {
         super.takeDown();
     }
 
-
-    public class WakeTestAgentBehaviour extends WakerBehaviour{
-
-        public WakeTestAgentBehaviour(Agent a, long timeout) {
-            super(a, timeout);
-        }
-
-        @Override
-        protected void onWake() {
-            super.onWake();
-            myAgent.addBehaviour(new MRReliableBehaviour());
-        }
-    }
 
     public class MRReliableBehaviour extends OneShotBehaviour{
         @Override
@@ -55,27 +56,47 @@ public class TestAgent extends Agent {
                 -based on actual data or some function?
             Restore agent state after calculated time has elapsed.
              */
+            if(behaviour != null) {
+                LOGGER.debug("Removing " + behaviour.getBehaviourName());
+                removeBehaviour(behaviour);
+            }
             AID[] agents = utils.getAgentNamesByService(myAgent, "Power-Generation");
             float probability = 100.0F;
             for (AID agent:agents) {
-                boolean toCrash = getRandomBoolean(probability);
-                if(toCrash) {
-                    utils.sendMessage(myAgent, agent, "SIMULATE_FAIL", "INFORM");
-                    long downTime = 0;
-                    try {
-                        downTime = utils.getOutageDownTime();
-                        addBehaviour(new RecoverAgent(myAgent, downTime, agent));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (CsvValidationException e) {
-                        e.printStackTrace();
+                if (!checkedAgents.contains(agent)) {
+                    boolean toCrash = getRandomBoolean(probability);
+                    if(toCrash) {
+                        utils.sendMessage(myAgent, agent, "SIMULATE_FAIL", "INFORM");
+                        long downTime = 0;
+                        try {
+                            downTime = utils.getOutageDownTime();
+                            addBehaviour(new RecoverAgent(myAgent, downTime, agent));
+                            checkedAgents.add(agent);
+
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "test_agent.test");
+                            logArgs.put("test_type", behaviour.getBehaviourName());
+                            logArgs.put("simulate_fail", "true");
+                            logArgs.put("downtime", String.valueOf(downTime));
+                            logArgs.put("receiver", agent.getLocalName());
+                            String message = getLocalName() + " sent SIMULATE_FAIL for " + downTime + " to " + agent.getLocalName();
+                            LOGGER.info(message);
+                            elasticHelper.indexLogs(getAgent(), logArgs);
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (CsvValidationException e) {
+                            e.printStackTrace();
+                        }
+                        probability = probability/2; //halves failure everytime a failure is triggered.
+                    } else {
+                        LOGGER.info(getLocalName() + " skipped SIMULATE_FAIL for " + agent.getLocalName());
                     }
-                    LOGGER.info(getLocalName() + " sent SIMULATE_FAIL for " + downTime + " to " + agent.getLocalName());
-                    probability = probability/2; //halves failure everytime a failure is triggered.
-                } else {
-                    LOGGER.info(getLocalName() + " skipped SIMULATE_FAIL for " + agent.getLocalName());
                 }
             }
+
+            behaviour = new CheckPowerUtilisation(myAgent,1000);
+            addBehaviour(behaviour);
 
         }
     }
@@ -106,6 +127,25 @@ public class TestAgent extends Agent {
             super.onWake();
             utils.sendMessage(getAgent(), receiver, "SIMULATE_RECOVER", "INFORM");
             LOGGER.info(getLocalName() + " sent SIMULATE_RECOVER to " + receiver.getLocalName());
+        }
+    }
+
+    public class CheckPowerUtilisation extends TickerBehaviour {
+        private boolean didCheck = false;
+
+        public CheckPowerUtilisation(Agent a, long period) {
+            super(a, period);
+        }
+
+        @Override
+        protected void onTick() {
+            double totalPowerLevels = powerInstance.getGridMax();
+            double currentPowerLevels = powerInstance.showPowerLevels();
+            double powerPercentage = (currentPowerLevels/totalPowerLevels)*100;
+            if (powerPercentage > 80 && !didCheck) {
+                addBehaviour(new MRReliableBehaviour());
+                didCheck = true;
+            }
         }
     }
 

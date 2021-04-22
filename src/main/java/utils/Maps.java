@@ -83,7 +83,7 @@ public class Maps {
                 }
             }
         } else if (single) {
-            for (String key : agentMap.keySet()) {
+            for (String key : agentMap.keySet()) { //concurrent modification exception
                 if (key.equals(agentName)) {
                     retSubMap.put(key, agentMap.get(key));
                 }
