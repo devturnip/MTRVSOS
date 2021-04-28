@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 public class Maps {
     private static Maps mapInstance = new Maps();
@@ -72,9 +73,29 @@ public class Maps {
         return agentMapPoint2D;
     }
 
+//    public HashMap<String, ImageView> getAgentMap(String agentName, boolean single) {
+//        HashMap<String, ImageView> retSubMap = new HashMap<>();
+//        HashMap<String, ImageView> agentMap = this.agentMap;
+//
+//        if(!single) {
+//            for (String key : agentMap.keySet()) {
+//                if (key.contains(agentName)) {
+//                    retSubMap.put(key, agentMap.get(key));
+//                }
+//            }
+//        } else if (single) {
+//            for (String key : agentMap.keySet()) { //concurrent modification exception
+//                if (key.equals(agentName)) {
+//                    retSubMap.put(key, agentMap.get(key));
+//                }
+//            }
+//        }
+//        return retSubMap;
+//    }
+
     public HashMap<String, ImageView> getAgentMap(String agentName, boolean single) {
         HashMap<String, ImageView> retSubMap = new HashMap<>();
-        HashMap<String, ImageView> agentMap = this.agentMap;
+        HashMap<String, ImageView> agentMap = new HashMap<>(this.agentMap);
 
         if(!single) {
             for (String key : agentMap.keySet()) {
@@ -83,7 +104,13 @@ public class Maps {
                 }
             }
         } else if (single) {
-            for (String key : agentMap.keySet()) { //concurrent modification exception
+            for (String key : agentMap.keySet()) {
+                /*
+                concurrent modification exception
+                this happens because agents are not fully loaded into the map,
+                and agentmap is being accessed at the same time by initposition() methods in each agent.
+                more time needs to be given based on no. of agents, or at least init position needs to be called only after ALL agents are loaded.
+                 */
                 if (key.equals(agentName)) {
                     retSubMap.put(key, agentMap.get(key));
                 }

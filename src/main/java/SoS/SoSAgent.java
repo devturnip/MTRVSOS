@@ -10,6 +10,7 @@ import jade.lang.acl.ACLMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.Power;
+import utils.ElasticHelper;
 import utils.Settings;
 import utils.Utils;
 
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class SoSAgent extends Agent {
     //logs
@@ -34,6 +36,7 @@ public class SoSAgent extends Agent {
     int msg_reject_count = 0;
     private boolean pauseAgent = false;
 
+    private ElasticHelper elasticHelper = ElasticHelper.getElasticHelperInstance();
 
     @Override
     protected void setup() {
@@ -163,11 +166,18 @@ public class SoSAgent extends Agent {
             ACLMessage message = myAgent.receive();
             if (message != null) {
                 String contents = message.getContent();
+                String result = "";
                 switch (contents) {
                     case "INCR_ACCEPTED":
                     case "DECR_ACCEPTED":
                         //LOGGER.warn("SENDERLOCALNAME: " + message.getSender().getLocalName());
                         messageQueue.remove(message.getSender().getLocalName());
+                        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                        logArgs.put("action", "sosagent.regulate_power");
+                        logArgs.put("regulate_power", "true");
+                        logArgs.put("utilisation_rate", String.valueOf(settingsInstance.getPowerUtilisationRate()));
+                        logArgs.put("accepted_by", message.getSender().getLocalName());
+                        elasticHelper.indexLogs(myAgent, logArgs);
                         break;
                     case "INCR_REJECTED":
                         messageQueue.remove(message.getSender().getLocalName());

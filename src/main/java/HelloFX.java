@@ -262,7 +262,7 @@ public class HelloFX extends Application {
                       startSmartHomeContainer(runtime);
                       startEVContainer(runtime);
                       startSoSAgent(runtime);
-                      if (settingsInstance.getTestRun().equalsIgnoreCase("reliablebehaviour")) {
+                      if (settingsInstance.getTestRun().equalsIgnoreCase("consistentreliabilitythreshold")) {
                           startTestAgent();
                       }
                       new Thread(task).start();
@@ -299,7 +299,7 @@ public class HelloFX extends Application {
                     int y=0;
 
                     while (true) {
-                        //collision prevention
+                        //collision prevention (doesnt work)
                         int x0 = new Random().ints(imageHeightXY*multiplier, ((int)canvas_x-(imageHeightXY*multiplier))).findFirst().getAsInt();
                         int y0 = new Random().ints(imageHeightXY*multiplier, ((int)canvas_y-(imageHeightXY*multiplier))).findFirst().getAsInt();
 

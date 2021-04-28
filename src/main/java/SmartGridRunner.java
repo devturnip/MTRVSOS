@@ -59,7 +59,7 @@ public class SmartGridRunner {
                     parsed.add(args[i]);
                     parsed.add(args[i+1]);
                     String value = args[i+1];
-                    if (value.equalsIgnoreCase("reliablebehaviour")) {
+                    if (value.equalsIgnoreCase("consistentreliabilitythreshold")) {
                         settingsInstance.setTestRun(value);
                     }
                 } else if (arguments.equalsIgnoreCase("-indexname")) {
