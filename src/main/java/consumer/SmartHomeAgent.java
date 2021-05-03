@@ -185,6 +185,12 @@ public class SmartHomeAgent extends Agent{
                         retryCount = retryCount + 1;
                         LOGGER.debug("BLOCK");
                         if (retryCount == 5) {
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "smarthome.power_request");
+                            logArgs.put("request_power", "no_reply_5t");
+                            logArgs.put("sent_request_to", currentNeighbour.getLocalName());
+                            elasticHelper.indexLogs(myAgent, logArgs);
+
                             //if blocked more than 5 times, recheck for nearest power source again.
                             if (currentColour != ORANGE) {
                                 try {

@@ -1,9 +1,13 @@
-import subprocess
 import os
-from pathlib import Path
+import subprocess
 import threading
 from datetime import datetime
+from pathlib import Path
 from random import randrange
+
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
+
 
 class runner (threading.Thread):
     def __init__(self, name):
@@ -85,35 +89,76 @@ def executeJar():
     # indexName = {'-indexname' : dt_string}
     
     testrun = '-testrun'
-    testname = 'reliablebehaviour'
+    testname = 'consistentreliabilitythreshold'
+    
+    elastichost = '-elastichost'
+    ipaddr = '192.168.25.3'
     
     jarfile = getJarFile()
     ret = subprocess.call(['java', '-jar', jarfile, powergen, pg, powerdi, pd, smarthome, sh, electronicveh, ev, runtime, rt, wait, wt, indexName, dt_string, testrun, testname])
     return ret
 
 
-def main():
-    # t.start_new_thread(executeJarRunner, ())
-    # t.start_new_thread(executeJarRunner, ())
-    # t.start_new_thread(executeJar, ())
-    # executeJarRunner()
-    thread_list = []
-    
-    for x in range(4):
-        thread = runner(x)
-        thread_list.append(thread)
-    for thread in thread_list:
-        thread.start()
-        print("Starting Threads")
-    for thread in thread_list:
-        thread.join()
+def queryES(index):
+    client = Elasticsearch(['http://localhost:9200/'])
+    s = Search(using=client, index=index)
+    request = s.source(['hash', 'author_date', 'author'])
         
-    # thread1 = runner("thread-a")
-    # thread2 = runner("thread-b")
-    # thread1.start()
-    # thread2.start()
-    # thread1.join()
-    # thread2.join()
+    response = s.scan()
+
+    # print(response.to_dict())
+
+    # for hit in response:
+    #     print(hit.to_dict())
+    
+    return response
+        
+
+def queryESALL(index):
+    # ElasticSearch instance (url)
+    es = Elasticsearch(['http://localhost:9200/'])
+
+    # Build a DSL Search object on the 'commits' index, 'summary' document type
+    request = Search(using=es, index=index, doc_type='summary')
+
+    # Run the Search, using the scan interface to get all resuls
+    response = request.scan()
+    for commit in response:
+        print(commit)
+        
+def checkMRConsistentPowerRegulation(index):
+    response = queryES(index)
+    returnValue = False;
+    for hit in response:
+        values = hit.to_dict()
+        if 'SoSAgent' in values.values():
+            if 'action' in values:
+                action = values['action']
+                if action == 'sosagent.regulate_power':
+                    if values['regulate_power'] == 'true':
+                        returnValue = True
+                        break
+    
+    print("MRConsistentPowerRegulation --", index, "-- result:", returnValue)
+    return returnValue
+
+
+def main():
+    
+    # thread_list = []
+    
+    # for x in range(4):
+    #     thread = runner(x)
+    #     thread_list.append(thread)
+    # for thread in thread_list:
+    #     thread.start()
+    #     print("Starting Threads")
+    # for thread in thread_list:
+    #     thread.join()
+    print("hello")
+
+    checkMRConsistentPowerRegulation('smartgridsos')
+    # queryESALL('smartgridsos')
     
 
 if __name__ == '__main__':

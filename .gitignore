@@ -10,3 +10,6 @@ MTPs-Main-Container.txt
 
 #python packages/venv
 venv
+
+#vscode
+scripts/.vscode/
