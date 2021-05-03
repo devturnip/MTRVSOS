@@ -13,3 +13,4 @@ venv
 
 #vscode
 scripts/.vscode/
+scripts/*err.txt
