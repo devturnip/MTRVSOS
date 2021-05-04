@@ -5,8 +5,8 @@ public class Settings {
     private static Settings settingsInstance = new Settings();
 
     //Rate Flags
-    private int rateSecsPowerGen = 1000;
-    private int rateSecsSmartHome = 1000;
+    private int rateSecsPowerGen = 500;
+    private int rateSecsSmartHome = 600;
     private int rateSecsEV = 2000;
     private int houseUnit = 1000;
     private int secondsToRun = 600;
@@ -41,31 +41,31 @@ public class Settings {
     private String HOSTNAME = "localhost";
 
     private boolean useElastic = false;
-    private String ELASTIC_HOST = "192.168.0.31";
+    private String ELASTIC_HOST = "192.168.0.32";
+//    private String ELASTIC_HOST = "192.168.25.19";
     private int ELASTIC_PORT = 9200;
     private String INDEXNAME = "smartgridsos";
 
-    //for facilitating test runs
+    //mt flags
+    private String testRun = "";
+
+    //METHODS----------------------------------------------------------------
+    public static Settings getSettingsInstance(){return settingsInstance;}
     public void setNumPowerAgents(int num){numPowerAgents=num;}
     public void setNumPowerDisAgents(int num){numPowerDisAgents=num;}
     public void setNumSmartHomeAgents(int num){numSmartHomeAgents=num;}
     public void setNumEVAgents(int num){numEVAgents=num;}
     public void setSecondsToRun(int num){secondsToRun=num;}
-
-    public static Settings getSettingsInstance(){return settingsInstance;}
     public int getRateSecsPowerGen(){return rateSecsPowerGen;}
     public int getRateSecsSmartHome(){return rateSecsSmartHome;}
     public int getHouseUnit(){return houseUnit;}
     public double getCanvasX(){return canvasX;}
     public double getCanvasY(){return canvasY;}
     public int getSecondsToRun(){return secondsToRun;}
-
     public double getPowerUtilisationRate() { return powerUtilisationRate;}
     public double getPreferredIncrement() { return preferredIncrement;}
     public double getPreferredUtilisationRate() { return preferredUtilisationRate;}
-
     public double getInitCapacityFactor() { return InitCapacityFactor; }
-
     public boolean getSimulationState() {
         return pauseSimulation;
     }
@@ -73,6 +73,8 @@ public class Settings {
         pauseSimulation = state;
     }
     public int getSimCheckRate(){return simCheckRate;}
+    public int getMSToWait(){return MSToWait;}
+    public void setMSToWait(int ms){MSToWait = ms;}
 
     //UI
     public int getMultiplier(){return multiplier;}
@@ -88,6 +90,7 @@ public class Settings {
     public String getPORT_NAME(){return PORT_NAME;}
     public String getHOSTNAME(){return HOSTNAME;}
 
+    //elastic flags
     public boolean getUseElastic(){return useElastic;}
     public void setUseElastic(boolean elastic){useElastic=elastic;}
     public String getELASTIC_HOST(){return ELASTIC_HOST;}
@@ -96,8 +99,10 @@ public class Settings {
     public void setELASTIC_PORT(int PORT){ELASTIC_PORT=PORT;}
     public String getINDEXNAME(){return INDEXNAME;}
     public void setINDEXNAME(String indexname){INDEXNAME=indexname;}
-    public int getMSToWait(){return MSToWait;}
-    public void setMSToWait(int ms){MSToWait = ms;}
+
+    //mt
+    public String getTestRun(){return testRun;}
+    public void setTestRun(String value){testRun = value;}
 
     public String printSettings() {
         StringBuilder sb = new StringBuilder();

@@ -14,16 +14,13 @@ import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.Power;
-import utils.ElasticHelper;
-import utils.Maps;
-import utils.Settings;
-import utils.Utils;
+import utils.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 
-public class SmartHomeAgent extends Agent {
+public class SmartHomeAgent extends Agent{
     Settings settingsInstance = Settings.getSettingsInstance();
     private HashMap<String, Double> appliancesList = new HashMap<>();
     private double totalAppliancePowerConsumption = 0;
@@ -86,7 +83,7 @@ public class SmartHomeAgent extends Agent {
     }
 
     @Override
-    protected void takeDown() {
+    protected void takeDown(){
         super.takeDown();
         powerInstance.subtractDemand(totalAppliancePowerConsumption);
         setDemandLabel();
@@ -188,6 +185,12 @@ public class SmartHomeAgent extends Agent {
                         retryCount = retryCount + 1;
                         LOGGER.debug("BLOCK");
                         if (retryCount == 5) {
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "smarthome.power_request");
+                            logArgs.put("request_power", "no_reply_5t");
+                            logArgs.put("sent_request_to", currentNeighbour.getLocalName());
+                            elasticHelper.indexLogs(myAgent, logArgs);
+
                             //if blocked more than 5 times, recheck for nearest power source again.
                             if (currentColour != ORANGE) {
                                 try {

@@ -89,7 +89,7 @@ public class ElasticHelper {
                 e.printStackTrace();
             }
         } else {
-            LOGGER.info("Attempted to use elastic logging. Not using elastic logging.");
+            LOGGER.debug("Attempted to use elastic logging. Not using elastic logging.");
         }
 
     }
@@ -131,7 +131,48 @@ public class ElasticHelper {
                 e.printStackTrace();
             }
         } else {
-            LOGGER.info("Attempted to use elastic logging. Not using elastic logging.");
+            LOGGER.debug("Attempted to use elastic logging. Not using elastic logging.");
+        }
+
+    }
+
+    public void indexLogs(Class classname, LinkedHashMap<String, String> arguments) {
+        if (settingsInstance.getUseElastic()){
+            try {
+                XContentBuilder xContentBuilder = XContentFactory.jsonBuilder();
+                xContentBuilder.startObject();
+                {
+                    xContentBuilder.field("class_name", classname.getSimpleName());
+                    xContentBuilder.timeField("timestamp", new Date());
+                    Set<String> keys = arguments.keySet();
+                    for (String key:keys) {
+                        xContentBuilder.field(key, arguments.get(key));
+                    }
+
+                }
+                xContentBuilder.endObject();
+                IndexRequest indexRequest = new IndexRequest(INDEXNAME).source(xContentBuilder);
+
+                ActionListener listener = new ActionListener<IndexResponse>() {
+                    @Override
+                    public void onResponse(IndexResponse indexResponse) {
+                        LOGGER.info(classname.getSimpleName() + " logged to elasticsearch with arguments: " + arguments.toString());
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        LOGGER.warn("Failed to log to elasticsearch:");
+                        e.printStackTrace();
+                    }
+                };
+
+                elasticClient.indexAsync(indexRequest, RequestOptions.DEFAULT, listener);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            LOGGER.debug("Attempted to use elastic logging. Not using elastic logging.");
         }
 
     }

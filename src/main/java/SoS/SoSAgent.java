@@ -10,6 +10,7 @@ import jade.lang.acl.ACLMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.Power;
+import utils.ElasticHelper;
 import utils.Settings;
 import utils.Utils;
 
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class SoSAgent extends Agent {
     //logs
@@ -34,6 +36,7 @@ public class SoSAgent extends Agent {
     int msg_reject_count = 0;
     private boolean pauseAgent = false;
 
+    private ElasticHelper elasticHelper = ElasticHelper.getElasticHelperInstance();
 
     @Override
     protected void setup() {
@@ -83,12 +86,13 @@ public class SoSAgent extends Agent {
                 double totalPowerLevels = powerInstance.getGridMax();
                 double currentPowerLevels = powerInstance.showPowerLevels();
                 double powerPercentage = (currentPowerLevels/totalPowerLevels)*100;
+                double demandRate = powerInstance.getDemand();
+                double genRate = powerInstance.getGenRate();
 
+                double gdRate = (demandRate / genRate) * 100;
+                double utRate = -1.0;
                 if (powerPercentage>powerUtilisationRate) {
-                    double demandRate = powerInstance.getDemand();
-                    double genRate = powerInstance.getGenRate();
-                    double gdRate = (demandRate / genRate) * 100;
-                    double utRate = -1.0;
+                    //if total power reserves are greater than set value
                     if (Double.isFinite(gdRate)) {
                         BigDecimal bigDecimal = new BigDecimal(gdRate).setScale(2, RoundingMode.HALF_UP);
                         utRate = bigDecimal.doubleValue();
@@ -124,29 +128,33 @@ public class SoSAgent extends Agent {
                                     //LOGGER.warn("AGENTSLOCALNAME: " + agents[i].getLocalName());
                                 }
                             }
-
-                        } else if (demandRate > genRate) {
-                            Utils utils = new Utils();
-                            AID[] agents = utils.getAgentNamesByService(SoSAgent.this, "Power-Generation");
-
-                            for (int i = 0; i < agents.length; i++) {
-                                if (!messageQueue.contains(agents[i].getLocalName())) {
-                                    String content = "GENRATE_INCR";
-                                    HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toAdd", String.valueOf(preferredIncrement));
-                                    utils.sendMessageWithArgs(myAgent, agents[i], arguments, content, "REQUEST");
-                                    messageQueue.add(agents[i].getLocalName());
-                                    //LOGGER.warn("AGENTSLOCALNAME: " + agents[i].getLocalName());
-                                }
-                            }
                         }
                     }
 
-                } else {
-                        block();
-                    }
+                } else if (powerPercentage <= 40) {
+                    genRateInc();
+                }
+                else {
+                    block();
+                }
             }
             else {
                 block();
+            }
+        }
+
+        private void genRateInc() {
+            Utils utils = new Utils();
+            AID[] agents = utils.getAgentNamesByService(SoSAgent.this, "Power-Generation");
+
+            for (int i = 0; i < agents.length; i++) {
+                if (!messageQueue.contains(agents[i].getLocalName())) {
+                    String content = "GENRATE_INCR";
+                    HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toAdd", String.valueOf(preferredIncrement));
+                    utils.sendMessageWithArgs(myAgent, agents[i], arguments, content, "REQUEST");
+                    messageQueue.add(agents[i].getLocalName());
+                    //LOGGER.warn("AGENTSLOCALNAME: " + agents[i].getLocalName());
+                }
             }
         }
     }
@@ -158,13 +166,21 @@ public class SoSAgent extends Agent {
             ACLMessage message = myAgent.receive();
             if (message != null) {
                 String contents = message.getContent();
+                String result = "";
                 switch (contents) {
                     case "INCR_ACCEPTED":
                     case "DECR_ACCEPTED":
                         //LOGGER.warn("SENDERLOCALNAME: " + message.getSender().getLocalName());
                         messageQueue.remove(message.getSender().getLocalName());
+                        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                        logArgs.put("action", "sosagent.regulate_power");
+                        logArgs.put("regulate_power", "true");
+                        logArgs.put("utilisation_rate", String.valueOf(settingsInstance.getPowerUtilisationRate()));
+                        logArgs.put("accepted_by", message.getSender().getLocalName());
+                        elasticHelper.indexLogs(myAgent, logArgs);
                         break;
                     case "INCR_REJECTED":
+                        messageQueue.remove(message.getSender().getLocalName());
                     case "DECR_REJECTED":
                         if (msg_reject_count >= 5) {
                             messageQueue.remove(message.getSender().getLocalName());

@@ -7,8 +7,10 @@ import jade.domain.DFService;
 import jade.lang.acl.ACLMessage;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
+import org.apache.commons.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import utils.ElasticHelper;
 import utils.Maps;
 import utils.Settings;
@@ -215,11 +217,33 @@ public class PowerStoreDisAgent extends Agent {
                         if (contents.equals("BEGIN_STORE")) {
                             LOGGER.info(myAgent.getLocalName() + " received PROPOSE (" + contents + ") from " + msg.getSender().getLocalName());
                             ACLMessage reply = msg.createReply();
-                            if (holdCapacity == 0 || holdCapacity < maxCapacity) {
-                                correspondent = msg.getSender();
-                                reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                                reply.setContent("ACCEPT_STORE");
+                            boolean send = true;
+                            if (holdCapacity <= 0 || holdCapacity < maxCapacity) {
+                                if (holdCapacity <= 0) {
+                                    correspondent = msg.getSender();
+                                    reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+                                    reply.setContent("ACCEPT_STORE");
+                                }
+                                else {
+                                    double threshold = (holdCapacity / maxCapacity) * 100;
+                                    if (threshold >= 65) {
+                                        //if capacity >= val, randomise chance of rejecting to allow other storage agents
+                                        //to receive power.
+                                        LOGGER.debug(getLocalName() + " threshold:" + threshold);
+                                        send = new Random().nextBoolean();
+                                    }
+                                    correspondent = msg.getSender();
+                                    reply.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+                                    if (send) {
+                                        reply.setContent("ACCEPT_STORE");
+                                    } else {
+                                        reply.setContent("REJECT_STORE");
+                                    }
+                                }
+                                LOGGER.info("SENDING REPLY(" + reply.getContent()+") to " + msg.getSender().getLocalName());
+                                LOGGER.debug("HOLD:" + holdCapacity + " MAX:" + maxCapacity);
                                 send(reply);
+
                             } else if (holdCapacity >= maxCapacity) {
                                 correspondent = null;
                                 myAgent.addBehaviour(new GeneratePower("0"));

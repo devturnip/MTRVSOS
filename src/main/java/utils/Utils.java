@@ -26,6 +26,7 @@ public class Utils {
     private InputStream inputStream = null;
     private ArrayList<Double> powerGenCapacityValues = new ArrayList<>();
     private ArrayList<Double> powerStorageCapacityValues = new ArrayList<>();
+    private ArrayList<Long> outageDownTimeValues = new ArrayList<>();
 
     public Utils() {
     }
@@ -285,6 +286,11 @@ public class Utils {
     public void sendMessage (Agent sender, AID recipient, String message, String ACLTYPE) {
         ACLMessage msg = null;
         switch (ACLTYPE) {
+            case "INFORM":
+                msg = new ACLMessage(ACLMessage.INFORM);
+                msg.addReceiver(recipient);
+                msg.setContent(message);
+                sender.send(msg);
             case "CFP":
                 msg = new ACLMessage(ACLMessage.CFP);
                 msg.addReceiver(recipient);
@@ -346,7 +352,7 @@ public class Utils {
                 msg.setContent(message);
                 msg.addUserDefinedParameter(userDefinedParams.getKey(), userDefinedParams.getValue());
                 sender.send(msg);
-                System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
+                //System.out.println(sender.getName()+ " sent (" + message + ") to " + recipient.getName() + " with args: " + userDefinedParams.getKey() + ":" + userDefinedParams.getValue());
                 break;
             case "":
                 LOGGER.warn("ACLType invalid/missing. Please enter correct type.");
@@ -404,5 +410,28 @@ public class Utils {
         double returnValue = powerStorageCapacityValues.get(new Random().nextInt(new Random().ints(1,powerStorageCapacityValues.size()).findFirst().getAsInt()));
         returnValue = returnValue*1000; //return in kwh
         return returnValue;
+    }
+
+    public long getOutageDownTime() throws IOException, CsvValidationException {
+        if (outageDownTimeValues.size() == 0) {
+            inputStream = this.getClass().getClassLoader().getResourceAsStream("data/outage_nonzero_final.csv");
+            if (inputStream == null) {
+                LOGGER.error("Resource does not exist");
+            }
+            else {
+                CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream));
+                csvReader.skip(1);
+                String[] nextLine;
+                while ((nextLine = csvReader.readNext()) != null) {
+                    if (nextLine != null) {
+                        outageDownTimeValues.add(Long.parseLong(nextLine[5]));
+                    }
+                }
+            }
+
+        }
+        long returnValue = outageDownTimeValues.get(new Random().nextInt(new Random().ints(1, outageDownTimeValues.size()).findFirst().getAsInt())) * 1000;
+        LOGGER.debug("OUTAGE_TIME:" + returnValue);
+        return  returnValue;
     }
 }

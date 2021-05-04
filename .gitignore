@@ -7,3 +7,10 @@ dependency-reduced-pom.xml
 # jade stuff
 APDescription.txt
 MTPs-Main-Container.txt
+
+#python packages/venv
+venv
+
+#vscode
+scripts/.vscode/
+scripts/*err.txt

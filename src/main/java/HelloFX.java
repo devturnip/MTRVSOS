@@ -30,10 +30,7 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import power.Power;
-import utils.Maps;
-import utils.Settings;
-import utils.TimeTracker;
-import utils.Utils;
+import utils.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -265,6 +262,9 @@ public class HelloFX extends Application {
                       startSmartHomeContainer(runtime);
                       startEVContainer(runtime);
                       startSoSAgent(runtime);
+                      if (settingsInstance.getTestRun().equalsIgnoreCase("consistentreliabilitythreshold")) {
+                          startTestAgent();
+                      }
                       new Thread(task).start();
                   }
                 };
@@ -299,7 +299,7 @@ public class HelloFX extends Application {
                     int y=0;
 
                     while (true) {
-                        //collision prevention
+                        //collision prevention (doesnt work)
                         int x0 = new Random().ints(imageHeightXY*multiplier, ((int)canvas_x-(imageHeightXY*multiplier))).findFirst().getAsInt();
                         int y0 = new Random().ints(imageHeightXY*multiplier, ((int)canvas_y-(imageHeightXY*multiplier))).findFirst().getAsInt();
 
@@ -382,7 +382,7 @@ public class HelloFX extends Application {
             evAgentContainerController.getPlatformController().kill();
             Runtime.instance().shutDown();
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 
@@ -396,6 +396,17 @@ public class HelloFX extends Application {
         String agentName = sosAgentName;
         try {
             AgentController ag = containerController.createNewAgent(agentName, "SoS.SoSAgent",
+                    new Object[]{});
+            ag.start();
+        } catch (StaleProxyException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void startTestAgent() {
+        String agentName = "rand-test-agent";
+        try {
+            AgentController ag = sosAgentContainerController.createNewAgent(agentName, "metamorphic.TestAgent",
                     new Object[]{});
             ag.start();
         } catch (StaleProxyException e) {
@@ -578,7 +589,8 @@ public class HelloFX extends Application {
     }
 
 
-    public static void main(String[] args) {
+    public static void main (String[] args) throws Exception {
+        Thread.setDefaultUncaughtExceptionHandler(new UXE());
         launch();
     }
 
