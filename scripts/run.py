@@ -45,25 +45,21 @@ def randomiseVariables():
     # argument_list = []
     
     # #og
-    # argument_dict = {
-    #     "pg" : randrange(1,10),
-    #     "pd" : randrange(1,10),
-    #     "sh" : randrange(1,20),
-    #     "ev" : randrange(1,20)
-    # }
-    
-    #small
     argument_dict = {
-        "pg" : randrange(1,3),
-        "pd" : randrange(1,5),
+        "pg" : randrange(1,10),
+        "pd" : randrange(1,10),
         "sh" : randrange(1,10),
         "ev" : randrange(1,10)
     }
     
-    # pg = randrange(1,20)
-    # pd = randrange(1,10)
-    # sh = randrange(1,100)
-    # ev = randrange(1,20)
+    #small
+    # argument_dict = {
+    #     "pg" : randrange(1,3),
+    #     "pd" : randrange(1,5),
+    #     "sh" : randrange(1,10),
+    #     "ev" : randrange(1,10)
+    # }
+    
     # argument_list.append(pg,pd,sh,ev)
     print(argument_dict)
     return argument_dict
@@ -93,7 +89,7 @@ def executeJar():
     runtime = '-rt'
     rt = '120'
     wait = '-wt'
-    wt = '2000'
+    wt = '6000'
     
     indexName = '-indexname'
     now = datetime.now()
@@ -162,7 +158,7 @@ def main():
     
     thread_list = []
     
-    for x in range(4):
+    for x in range(6):
         thread = runner(x)
         thread_list.append(thread)
     for thread in thread_list:
