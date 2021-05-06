@@ -250,6 +250,13 @@ public class SmartHomeAgent extends Agent{
                             }
                             currentColour = YELLOWGREEN;
                         }
+
+                        LinkedHashMap<String, String> logArgs0 = new LinkedHashMap<>();
+                        logArgs0.put("action", "smarthome.power_receive");
+                        logArgs0.put("receive_power", "true");
+                        logArgs0.put("accepted_by", msg.getSender().getLocalName());
+                        elasticHelper.indexLogs(myAgent, logArgs0);
+
                         break;
                     case "REJECT_CONSUME":
                         messageSent = false;

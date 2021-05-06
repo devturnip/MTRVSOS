@@ -372,14 +372,14 @@ public class HelloFX extends Application {
     public void stop() throws Exception {
         super.stop();
         try {
-            powerAgentContainerController.kill();
-            smartHomeAgentContainerController.kill();
-            powerAgentContainerController.getPlatformController().kill();
-            smartHomeAgentContainerController.getPlatformController().kill();
-            sosAgentContainerController.kill();
-            sosAgentContainerController.getPlatformController().kill();
-            evAgentContainerController.kill();
-            evAgentContainerController.getPlatformController().kill();
+//            powerAgentContainerController.kill();
+//            smartHomeAgentContainerController.kill();
+//            powerAgentContainerController.getPlatformController().kill();
+//            smartHomeAgentContainerController.getPlatformController().kill();
+//            sosAgentContainerController.kill();
+//            sosAgentContainerController.getPlatformController().kill();
+//            evAgentContainerController.kill();
+//            evAgentContainerController.getPlatformController().kill();
             Runtime.instance().shutDown();
         } catch (Exception e) {
             //e.printStackTrace();

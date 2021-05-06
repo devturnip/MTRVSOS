@@ -1,10 +1,12 @@
 import jade.Boot;
+import jade.mtp.MTPException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.ElasticHelper;
 import utils.Settings;
 import utils.UXE;
 
+import java.net.BindException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -85,13 +87,14 @@ public class SmartGridRunner {
             }
             Boot.main(param);
         } catch (Exception e) {
-            e.printStackTrace();
+//                e.printStackTrace();
             LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
             logArgs.put("action", "main.exit");
             logArgs.put("exit_code", "1");
             logArgs.put("exit_stacktrace", e.getStackTrace().toString());
             elasticHelperInstance.indexLogs(SmartGridRunner.class, logArgs);
-            System.exit(1);
+//                System.exit(1);
+
         }
     }
 }

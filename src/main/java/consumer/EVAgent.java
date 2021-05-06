@@ -404,6 +404,11 @@ public class EVAgent extends Agent {
                                 }
                                 holdCapacity = holdCapacity + chargeValue;
                                 LOGGER.info(agent.getLocalName() + "fully charged: " + holdCapacity + "/" + maxCapacity);
+                                LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                logArgs.put("action", "ev.charge");
+                                logArgs.put("accept_charge", "true");
+                                logArgs.put("accepted_by", msg.getSender().getLocalName());
+                                elasticHelper.indexLogs(this, logArgs);
                                 if (percent > 10) {
                                     tryNext = false;
                                     hasTarget = false;
