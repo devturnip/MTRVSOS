@@ -54,7 +54,7 @@ def executeJarRunner(mr):
         if ("MRConsistentPowerRegulation" in mr):
             checkMRConsistentPowerRegulation(index=dt_string, host=ipaddr, fname=fname, var_dict=var_dict)
         elif ("MRConsistentReliabilityThreshold" in mr):
-            print("hello")
+            checkMRConsistentReliabilityThreshold(index=dt_string, host=ipaddr, fname=fname, var_dict=var_dict)
         
 def randomiseVariables(size="r.small"):
     #1 sh smarthome = 1000 units
@@ -97,7 +97,7 @@ def randomiseVariables(size="r.small"):
     return argument_dict
 
 def executeJar(mr):
-    var_dict = randomiseVariables("r.small")
+    var_dict = randomiseVariables("r.large")
     #flags
     #test flags for inducing failure
     # powergen = '-p'
@@ -130,7 +130,7 @@ def executeJar(mr):
     
     elastichost = '-elastichost'
     #ipaddr = '192.168.0.31' #self
-    ipaddr = '192.168.0.32' #lab
+    ipaddr = '192.168.25.19' #lab
     
     jarfile = getJarFile()
     
@@ -180,56 +180,106 @@ def writeToES(host, indexname, msgBody):
     res = client.index(index=indexname, body=msgBody)
     return res
 
-def checkMRConsistentReliabilityThreshold(index, host):
+def checkMRConsistentReliabilityThreshold(index, host, fname, var_dict):
     
-    response = queryES(index, host)
-    count = 0
-    sh = []
-    sh_interrupted = []
-    pg_init_timestamps = []
-    
-    #obtain first instance of power init
-    for hit in response:
-        values = hit.to_dict()
-        if 'agent_type' in values:
-            agent_type = values['agent_type']
-            if 'PowerGenAgent' in agent_type:
-                        if 'action' in values:
-                            action = values['action']
-                            if 'power_generation.init' in action:
-                                pg_init_timestamps.append(values['timestamp'])
-                                
-    for t in pg_init_timestamps:
-        print(t)
-    
-    for hit in response:
-        values = hit.to_dict()
-        #print(values)
-        if 'agent_type' in values:
-            agent_type = values['agent_type']
-            if 'SmartHomeAgent' in agent_type:
-                count += 1
-                #print(count,values)
-                sh.append(values['agent_name'])
-                if 'receive_power' in values:
-                    received = values['receive_power']
-                    if 'false' in received:
-                        sh_interrupted.append(values['agent_name'])
+    msgBody = {
+        "timestamp" : "",
+        "mr" : "",
+        "test_type" : "r.original",
+        "result" : "",
+        "exception_body" : "",
+        "test_indexname" : "",
+        "cs_arguments" : json.dumps(var_dict)
+    }
     
     
-    
-    # #unique smarthome agents
-    # sh_set = set(sh)
-    # for s in sh_set:
-    #     print(s)
-    
-    # #num unique smarthome agents
-    # count_sh = len(sh_set)
-    # print(count_sh)
-    
-    # sh_int_set = set(sh_interrupted)
-    # for s in sh_set:
-    #     print("int:",s)
+    exceptions = parseException(fname)
+    if exceptions:
+        print("MRConsistentReliabilityThreshold --", index, "-- result:", "FAILED DUE TO EXCEPTIONS")
+        for e in exceptions:
+            print(e)
+            print("LINE")
+        
+        strExcept = str1 = ''.join(exceptions)
+        
+        msgBody["timestamp"] = datetime.now().replace(microsecond=0).isoformat()
+        msgBody["mr"] = "MRConsistentReliabilityThreshold"
+        msgBody["result"] = "FAILED_DUE_TO_EXCEPTIONS"
+        msgBody["exception_body"] = strExcept
+        msgBody["test_indexname"] = index
+        
+        res = writeToES(host=host, indexname="experiment_results", msgBody=msgBody)
+        print(res)
+        
+    else:
+        response_init = queryES(index, host)
+        response = queryES(index, host)
+        count = 0
+        sh = []
+        sh_interrupted = []
+        sh_interrupted_5t = []
+        pg_init_timestamps = []
+        min_count = 0;
+        #obtain first instance of power init
+        for hit in response_init:
+            values = hit.to_dict()
+            if 'agent_type' in values:
+                agent_type = values['agent_type']
+                if 'PowerGenAgent' in agent_type:
+                            if 'action' in values:
+                                action = values['action']
+                                if 'power_generation.init' in action:
+                                    pg_init_timestamps.append(values['timestamp'])
+                                    
+        
+        time_to_compare = datetime.strptime(pg_init_timestamps[-1], '%Y-%m-%dT%H:%M:%S.%fZ')
+        print("init: ",time_to_compare)
+        
+        for hit in response:
+            values = hit.to_dict()
+            if 'agent_type' in values:
+                agent_type = values['agent_type']
+                agent_time = datetime.strptime(values['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                if 'SmartHomeAgent' in agent_type:
+                        count += 1
+                        sh.append(values['agent_name'])
+                        
+                if agent_time.timestamp() > time_to_compare.timestamp():
+                    if 'SmartHomeAgent' in agent_type:
+                        if 'receive_power' in values:
+                            received = values['receive_power']
+                            if 'false' in received:
+                                print(datetime.strptime(values['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'), values['agent_name'])
+                                sh_interrupted.append(values['agent_name'])
+                                min_count += 1;
+                                #print(values)
+                        elif 'request_power' in values:
+                            request = values['request_power']
+                            if 'no_reply_5t' in request:
+                                print(datetime.strptime(values['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'), values['agent_name'])
+                                sh_interrupted_5t.append(values['agent_name'])
+                                min_count += 1;
+        
+        
+        print(len(set(sh)), "total customers")
+        print(len(set(sh_interrupted)), "interrupted customers:", set(sh_interrupted))
+        print(len(set(sh_interrupted_5t)), "interrupted customers 5t:", set(sh_interrupted_5t))
+        total = sh_interrupted + sh_interrupted_5t
+        print(len(set(total)), "interrupted customers total:", set(total))
+        print("total interrupted minutes:", min_count)
+        
+        # saifi = sum(num of customers interrupted) / total num of customers served
+        saifi = len(set(total)) / len(set(sh))
+        print("SAIFI:", saifi)
+        # asai = 1 - (sum(interruption_time * num of customers interrupted) / (total customers * time period under study)) * 100
+        asai = (1-(min_count * len(set(total))) / (len(set(sh))*90)) * 100 
+        print("ASAI:", asai)
+        
+        msgBody["timestamp"] = datetime.now().replace(microsecond=0).isoformat()
+        msgBody["mr"] = "MRConsistentPowerRegulation"
+        msgBody["result"] = "PASSED"
+        msgBody["exception_body"] = "none"
+        msgBody["test_indexname"] = index
     
         
 def checkMRConsistentPowerRegulation(index, host, fname, var_dict):
@@ -320,9 +370,9 @@ def main():
     # for thread in thread_list:
     #     thread.join()
     
-    # runTests(1,1, "MRConsistentReliabilityThreshold")
+    runTests(1,1, "MRConsistentReliabilityThreshold")
 
-    checkMRConsistentReliabilityThreshold(index="smartgrid-2021-05-06t16.40.04.987486", host="192.168.0.32")
+    # checkMRConsistentReliabilityThreshold(index="smartgrid-2021-05-10t01.53.54.282694", host="192.168.25.19")
     # checkMRConsistentPowerRegulation('smartgridsos')
     # queryESALL('smartgridsos')
     

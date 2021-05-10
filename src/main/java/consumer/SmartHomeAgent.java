@@ -46,6 +46,8 @@ public class SmartHomeAgent extends Agent{
     private AID currentNeighbour;
     private int retryCount = 0;
     private boolean messageSent = false;
+    private int rejCount = 0;
+    private int logError = 0;
 
     //colour flags
     private int currentColour = 0;
@@ -70,15 +72,15 @@ public class SmartHomeAgent extends Agent{
 
         InitPosition initPosition = new InitPosition(this, settingsInstance.getMSToWait());
         ReceiveMessage receiveMessage = new ReceiveMessage();
-        ConsumeElectricity consumeElectricity = new ConsumeElectricity(this, rateSecs);
+        WakeConsumer wakeConsumer = new WakeConsumer(this, settingsInstance.getMSToWait()+2000);
         CheckSimulationState checkSimulationState = new CheckSimulationState(this, settingsInstance.getSimCheckRate());
         behaviourList.add(initPosition);
         behaviourList.add(receiveMessage);
-        behaviourList.add(consumeElectricity);
+        behaviourList.add(wakeConsumer);
         behaviourList.add(checkSimulationState);
         addBehaviour(initPosition);
         addBehaviour(receiveMessage);
-        addBehaviour(consumeElectricity);
+        addBehaviour(wakeConsumer);
         addBehaviour(checkSimulationState);
     }
 
@@ -167,6 +169,20 @@ public class SmartHomeAgent extends Agent{
         }
     }
 
+    private class WakeConsumer extends WakerBehaviour {
+        public WakeConsumer(Agent a, long timeout) {
+            super(a, timeout);
+        }
+
+        @Override
+        protected void onWake() {
+            super.onWake();
+            ConsumeElectricity consumeElectricity = new ConsumeElectricity(myAgent, rateSecs);
+            behaviourList.add(consumeElectricity);
+            addBehaviour(consumeElectricity);
+        }
+    }
+
     private class ConsumeElectricity extends TickerBehaviour {
 
         public ConsumeElectricity(Agent a, long period) {
@@ -185,11 +201,15 @@ public class SmartHomeAgent extends Agent{
                         retryCount = retryCount + 1;
                         LOGGER.debug("BLOCK");
                         if (retryCount == 5) {
-                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
-                            logArgs.put("action", "smarthome.power_request");
-                            logArgs.put("request_power", "no_reply_5t");
-                            logArgs.put("sent_request_to", currentNeighbour.getLocalName());
-                            elasticHelper.indexLogs(myAgent, logArgs);
+                            if (logError>=3) {
+                                LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                                logArgs.put("action", "smarthome.power_request");
+                                logArgs.put("request_power", "no_reply_5t");
+                                logArgs.put("sent_request_to", currentNeighbour.getLocalName());
+                                elasticHelper.indexLogs(myAgent, logArgs);
+                                logError=0;
+                            }
+                            logError+=1;
 
                             //if blocked more than 5 times, recheck for nearest power source again.
                             if (currentColour != ORANGE) {
@@ -256,9 +276,11 @@ public class SmartHomeAgent extends Agent{
                         logArgs0.put("receive_power", "true");
                         logArgs0.put("accepted_by", msg.getSender().getLocalName());
                         elasticHelper.indexLogs(myAgent, logArgs0);
+                        rejCount = 0;
 
                         break;
                     case "REJECT_CONSUME":
+
                         messageSent = false;
                         //change status to orange
                         if (currentColour != ORANGE) {
@@ -270,11 +292,15 @@ public class SmartHomeAgent extends Agent{
                             currentColour = ORANGE;
                         }
 
-                        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
-                        logArgs.put("action", "smarthome.power_receive");
-                        logArgs.put("receive_power", "false");
-                        logArgs.put("rejected_by", msg.getSender().getLocalName());
-                        elasticHelper.indexLogs(myAgent, logArgs);
+                        if (rejCount >= 2) {
+                            LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                            logArgs.put("action", "smarthome.power_receive");
+                            logArgs.put("receive_power", "false");
+                            logArgs.put("rejected_by", msg.getSender().getLocalName());
+                            elasticHelper.indexLogs(myAgent, logArgs);
+                            rejCount = 0;
+                        }
+                        rejCount += 1;
 
                         //get next neighbour in list to send
                         HashMap.Entry<String, String> arguments = new HashMap.SimpleEntry<String, String>("toConsume", String.valueOf(totalAppliancePowerConsumption));
