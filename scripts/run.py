@@ -8,6 +8,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from random import randrange
+from statistics import mean
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
@@ -130,7 +131,7 @@ def executeJar(mr):
     
     elastichost = '-elastichost'
     #ipaddr = '192.168.0.31' #self
-    ipaddr = '192.168.25.19' #lab
+    ipaddr = '192.168.25.48' #lab
     
     jarfile = getJarFile()
     
@@ -170,6 +171,7 @@ def queryESALL(index, host):
         print(commit)
         
 def writeToES(host, indexname, msgBody):
+    print(msgBody)
     host_addr = 'http://' + host + ':9200/'
     client = Elasticsearch([host_addr])
 
@@ -181,7 +183,7 @@ def writeToES(host, indexname, msgBody):
     return res
 
 def checkMRConsistentReliabilityThreshold(index, host, fname, var_dict):
-    
+    indexname = "experiment_results_1"
     msgBody = {
         "timestamp" : "",
         "mr" : "",
@@ -189,9 +191,12 @@ def checkMRConsistentReliabilityThreshold(index, host, fname, var_dict):
         "result" : "",
         "exception_body" : "",
         "test_indexname" : "",
-        "cs_arguments" : json.dumps(var_dict)
+        "cs_arguments" : json.dumps(var_dict),
+        "saifi" : 0,
+        "saifi_standard" : 0,
+        "asai": 0,
+        "asai_standard" : 0
     }
-    
     
     exceptions = parseException(fname)
     if exceptions:
@@ -208,13 +213,16 @@ def checkMRConsistentReliabilityThreshold(index, host, fname, var_dict):
         msgBody["exception_body"] = strExcept
         msgBody["test_indexname"] = index
         
-        res = writeToES(host=host, indexname="experiment_results", msgBody=msgBody)
+        res = writeToES(host=host, indexname=indexname, msgBody=msgBody)
         print(res)
         
     else:
         response_init = queryES(index, host)
         response = queryES(index, host)
         count = 0
+        saifi_usa = [0.372, 0.21, 0.298, 0.376, 0.402, 0.378]
+        saifi_mean = mean(saifi_usa)
+        asai_standard = 99
         sh = []
         sh_interrupted = []
         sh_interrupted_5t = []
@@ -262,8 +270,8 @@ def checkMRConsistentReliabilityThreshold(index, host, fname, var_dict):
         
         
         print(len(set(sh)), "total customers")
-        print(len(set(sh_interrupted)), "interrupted customers:", set(sh_interrupted))
-        print(len(set(sh_interrupted_5t)), "interrupted customers 5t:", set(sh_interrupted_5t))
+        print(len(set(sh_interrupted)), "interrupted customers:")
+        print(len(set(sh_interrupted_5t)), "interrupted customers 5t:")
         total = sh_interrupted + sh_interrupted_5t
         print(len(set(total)), "interrupted customers total:", set(total))
         print("total interrupted minutes:", min_count)
@@ -276,11 +284,29 @@ def checkMRConsistentReliabilityThreshold(index, host, fname, var_dict):
         print("ASAI:", asai)
         
         msgBody["timestamp"] = datetime.now().replace(microsecond=0).isoformat()
-        msgBody["mr"] = "MRConsistentPowerRegulation"
-        msgBody["result"] = "PASSED"
+        msgBody["mr"] = "MRConsistentReliabilityThreshold"
         msgBody["exception_body"] = "none"
         msgBody["test_indexname"] = index
-    
+        msgBody["saifi"] = saifi
+        msgBody["saifi_standard"] = saifi_mean
+        msgBody["asai"] = asai
+        msgBody["asai_standard"] = asai_standard
+        
+        if saifi <= saifi_mean and asai >= asai_standard:
+            msgBody["result"] = "PASSED"
+        
+        elif saifi >= saifi_mean and asai >= asai_standard:
+            msgBody["result"] = "FAIL_saifi"
+            
+        elif saifi <= saifi_mean and asai <= asai_standard:
+            msgBody["result"] = "FAIL_asai"
+            
+        else:
+            msgBody["result"] = "FAIL"
+        
+        res = writeToES(host=host, indexname=indexname, msgBody=msgBody)
+        print(res)
+        
         
 def checkMRConsistentPowerRegulation(index, host, fname, var_dict):
     
@@ -370,7 +396,7 @@ def main():
     # for thread in thread_list:
     #     thread.join()
     
-    runTests(1,1, "MRConsistentReliabilityThreshold")
+    runTests(50,1, "MRConsistentReliabilityThreshold")
 
     # checkMRConsistentReliabilityThreshold(index="smartgrid-2021-05-10t01.53.54.282694", host="192.168.25.19")
     # checkMRConsistentPowerRegulation('smartgridsos')

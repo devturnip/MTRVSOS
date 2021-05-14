@@ -414,7 +414,8 @@ public class Utils {
 
     public long getOutageDownTime() throws IOException, CsvValidationException {
         if (outageDownTimeValues.size() == 0) {
-            inputStream = this.getClass().getClassLoader().getResourceAsStream("data/outage_nonzero_final.csv");
+//            inputStream = this.getClass().getClassLoader().getResourceAsStream("data/outage_nonzero_final.csv");
+            inputStream = this.getClass().getClassLoader().getResourceAsStream("data/outage_nonzero_nodupes.csv");
             if (inputStream == null) {
                 LOGGER.error("Resource does not exist");
             }
@@ -424,7 +425,8 @@ public class Utils {
                 String[] nextLine;
                 while ((nextLine = csvReader.readNext()) != null) {
                     if (nextLine != null) {
-                        outageDownTimeValues.add(Long.parseLong(nextLine[5]));
+//                        outageDownTimeValues.add(Long.parseLong(nextLine[5]));
+                        outageDownTimeValues.add((long)Double.parseDouble(nextLine[1]));
                     }
                 }
             }
@@ -432,6 +434,16 @@ public class Utils {
         }
         long returnValue = outageDownTimeValues.get(new Random().nextInt(new Random().ints(1, outageDownTimeValues.size()).findFirst().getAsInt())) * 1000;
         LOGGER.debug("OUTAGE_TIME:" + returnValue);
-        return  returnValue;
+        return returnValue;
+    }
+
+    public double getOutageProbability() throws IOException, CsvValidationException {
+        if (outageDownTimeValues.size() == 0) {
+            getOutageDownTime();
+        }
+        double outprob = (outageDownTimeValues.size()/365.0) * 100.0;
+        LOGGER.debug("OUTAGEPROBABILITY: " + outprob + "outsize: " + outageDownTimeValues.size());
+        return outprob;
+
     }
 }

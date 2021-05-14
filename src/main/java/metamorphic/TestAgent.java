@@ -45,6 +45,58 @@ public class TestAgent extends Agent {
         super.takeDown();
     }
 
+    public class MRReliableBehaviourRealProbability extends OneShotBehaviour {
+        //no retry mechanism; this behaviour runs once per simulation
+        //agents have a x probability chance of failure (based on 'real-er' data)
+        @Override
+        public void action() {
+            //get list of power agents
+            AID[] agents = utils.getAgentNamesByService(myAgent, "Power-Generation");
+            boolean toCrash = false;
+            //for each agent
+            for (AID agent : agents) {
+                try {
+                    //calculate their probability of failure
+                    toCrash = getRandomBoolean((float) utils.getOutageProbability());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (CsvValidationException e) {
+                    e.printStackTrace();
+                }
+                //if fail
+                if (toCrash) {
+                    //send message to power agent to fail
+                    utils.sendMessage(myAgent, agent, "SIMULATE_FAIL", "INFORM");
+                    long downTime = 0;
+                    try {
+                        //get outage downtime from csv list
+                        downTime = utils.getOutageDownTime();
+
+                        //add behaviour to send recovery message based on downtime
+                        addBehaviour(new RecoverAgent(myAgent, downTime, agent));
+
+                        //log agents who received failed message
+                        LinkedHashMap<String, String> logArgs = new LinkedHashMap<>();
+                        logArgs.put("action", "test_agent.test");
+                        logArgs.put("test_type", behaviour.getBehaviourName());
+                        logArgs.put("simulate_fail", "true");
+                        logArgs.put("downtime", String.valueOf(downTime));
+                        logArgs.put("receiver", agent.getLocalName());
+                        String message = getLocalName() + " sent SIMULATE_FAIL for " + downTime + " to " + agent.getLocalName();
+                        LOGGER.info(message);
+
+                        elasticHelper.indexLogs(getAgent(), logArgs);
+                    } catch (CsvValidationException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    LOGGER.info(getLocalName() + " skipped SIMULATE_FAIL for " + agent.getLocalName());
+                }
+            }
+        }
+    }
 
     public class MRReliableBehaviour extends OneShotBehaviour{
         @Override
@@ -56,6 +108,8 @@ public class TestAgent extends Agent {
                 -based on actual data or some function?
             Restore agent state after calculated time has elapsed.
              */
+            //all power agents will fail due to retry mechanism
+            //use this if you need all power agents to fail
             if(behaviour != null) {
                 LOGGER.debug("Removing " + behaviour.getBehaviourName());
                 removeBehaviour(behaviour);
@@ -89,12 +143,14 @@ public class TestAgent extends Agent {
                             e.printStackTrace();
                         }
                         probability = probability/2; //halves failure everytime a failure is triggered.
+
                     } else {
                         LOGGER.info(getLocalName() + " skipped SIMULATE_FAIL for " + agent.getLocalName());
                     }
                 }
             }
 
+            //retry mechanism
             behaviour = new CheckPowerUtilisation(myAgent,1000);
             addBehaviour(behaviour);
 
@@ -143,7 +199,7 @@ public class TestAgent extends Agent {
             double currentPowerLevels = powerInstance.showPowerLevels();
             double powerPercentage = (currentPowerLevels/totalPowerLevels)*100;
             if (powerPercentage > 80 && !didCheck) {
-                addBehaviour(new MRReliableBehaviour());
+                addBehaviour(new MRReliableBehaviourRealProbability());
                 didCheck = true;
             }
         }
