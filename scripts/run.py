@@ -98,7 +98,7 @@ def randomiseVariables(size="r.small"):
     return argument_dict
 
 def executeJar(mr):
-    var_dict = randomiseVariables("r.large")
+    var_dict = randomiseVariables("r.small")
     #flags
     #test flags for inducing failure
     # powergen = '-p'
@@ -130,8 +130,8 @@ def executeJar(mr):
     # indexName = {'-indexname' : dt_string}
     
     elastichost = '-elastichost'
-    #ipaddr = '192.168.0.31' #self
-    ipaddr = '192.168.25.48' #lab
+    ipaddr = '192.168.0.31' #self
+    #ipaddr = '192.168.25.61' #lab
     
     jarfile = getJarFile()
     
@@ -183,11 +183,11 @@ def writeToES(host, indexname, msgBody):
     return res
 
 def checkMRConsistentReliabilityThreshold(index, host, fname, var_dict):
-    indexname = "experiment_results_1"
+    indexname = "experiment_results_8"
     msgBody = {
         "timestamp" : "",
         "mr" : "",
-        "test_type" : "r.original",
+        "test_type" : "r.small",
         "result" : "",
         "exception_body" : "",
         "test_indexname" : "",
@@ -206,11 +206,13 @@ def checkMRConsistentReliabilityThreshold(index, host, fname, var_dict):
             print("LINE")
         
         strExcept = str1 = ''.join(exceptions)
+        exceptions_head = re.findall(r'^(.*?)Exception', strExcept, re.M)
         
         msgBody["timestamp"] = datetime.now().replace(microsecond=0).isoformat()
         msgBody["mr"] = "MRConsistentReliabilityThreshold"
         msgBody["result"] = "FAILED_DUE_TO_EXCEPTIONS"
         msgBody["exception_body"] = strExcept
+        msgBody["exception_head"] = exceptions_head[0]
         msgBody["test_indexname"] = index
         
         res = writeToES(host=host, indexname=indexname, msgBody=msgBody)
@@ -309,11 +311,11 @@ def checkMRConsistentReliabilityThreshold(index, host, fname, var_dict):
         
         
 def checkMRConsistentPowerRegulation(index, host, fname, var_dict):
-    
+    indexname = "experiment_results_8"
     msgBody = {
         "timestamp" : "",
         "mr" : "",
-        "test_type" : "r.original",
+        "test_type" : "r.large",
         "result" : "",
         "exception_body" : "",
         "test_indexname" : "",
@@ -329,14 +331,16 @@ def checkMRConsistentPowerRegulation(index, host, fname, var_dict):
             print("LINE")
         
         strExcept = str1 = ''.join(exceptions)
+        exceptions_head = re.findall(r'^(.*?)Exception', strExcept, re.M)
         
         msgBody["timestamp"] = datetime.now().replace(microsecond=0).isoformat()
         msgBody["mr"] = "MRConsistentPowerRegulation"
         msgBody["result"] = "FAILED_DUE_TO_EXCEPTIONS"
+        msgBody["exception_head"] = exceptions_head[0]
         msgBody["exception_body"] = strExcept
         msgBody["test_indexname"] = index
         
-        res = writeToES(host=host, indexname="experiment_results", msgBody=msgBody)
+        res = writeToES(host=host, indexname=indexname, msgBody=msgBody)
         print(res)
         
     else :  
@@ -366,7 +370,7 @@ def checkMRConsistentPowerRegulation(index, host, fname, var_dict):
             msgBody["exception_body"] = "none"
             msgBody["test_indexname"] = index
         
-        res = writeToES(host=host, indexname="experiment_results", msgBody=msgBody)
+        res = writeToES(host=host, indexname=indexname, msgBody=msgBody)
         print(res)
     
 
@@ -396,7 +400,8 @@ def main():
     # for thread in thread_list:
     #     thread.join()
     
-    runTests(50,1, "MRConsistentReliabilityThreshold")
+    # "MRConsistentPowerRegulation" | "MRConsistentReliabilityThreshold"
+    runTests(30,1, "MRConsistentReliabilityThreshold")
 
     # checkMRConsistentReliabilityThreshold(index="smartgrid-2021-05-10t01.53.54.282694", host="192.168.25.19")
     # checkMRConsistentPowerRegulation('smartgridsos')
